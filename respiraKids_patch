@@ -1,0 +1,327 @@
+From 8b932a6f1510177162a3375086d02560e9ec915d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 21 Nov 2026 15:43:22 -0300
+Subject: [PATCH] =?UTF-8?q?RespiraKids=20na=20estrutura=20do=20reposit?=
+ =?UTF-8?q?=C3=B3rio:=20banco=20no=20Convex,=20app=20das=20fam=C3=ADlias,?=
+ =?UTF-8?q?=20app=20cl=C3=ADnico,=20v=C3=A1rias=20crian=C3=A7as=20por=20co?=
+ =?UTF-8?q?nta=20e=20registros=20de=20dias=20anteriores?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ AGENTS.md                                     |    3 +
+ README.md                                     |    5 +
+ client/index.html                             |    6 +-
+ client/public/respirakids-logo.png            |  Bin 0 -> 33389 bytes
+ .../components/respira/respira-provider.tsx   |   94 ++
+ .../src/components/respira/respira-shell.tsx  |  165 +++
+ .../src/components/respira/symptom-icon.tsx   |   41 +
+ client/src/components/respira/ui.tsx          |  366 ++++++
+ client/src/index.css                          |  152 +++
+ client/src/lib/respira/audio.ts               |  498 ++++++++
+ client/src/lib/respira/format.ts              |  114 ++
+ client/src/lib/respira/search.ts              |   33 +
+ client/src/pages/respira/clinico.tsx          |  692 +++++++++++
+ client/src/pages/respira/criancas.tsx         |  289 +++++
+ client/src/pages/respira/duvidas.tsx          |  310 +++++
+ client/src/pages/respira/enviar.tsx           |  222 ++++
+ client/src/pages/respira/equipe.tsx           |  186 +++
+ client/src/pages/respira/gravar.tsx           | 1073 +++++++++++++++++
+ client/src/pages/respira/historico.tsx        |  396 ++++++
+ client/src/pages/respira/home.tsx             |  204 ++++
+ client/src/pages/respira/mais.tsx             |  178 +++
+ client/src/pages/respira/sintomas.tsx         |   78 ++
+ client/src/pages/respira/termos.tsx           |  186 +++
+ client/src/routeTree.gen.ts                   |  504 ++++++--
+ client/src/routes/_authenticated/clinico.tsx  |   13 +
+ client/src/routes/_authenticated/conversa.tsx |   13 +
+ client/src/routes/_authenticated/criancas.tsx |   13 +
+ .../src/routes/_authenticated/dev/todos.tsx   |    9 +
+ client/src/routes/_authenticated/duvidas.tsx  |    6 +
+ client/src/routes/_authenticated/enviar.tsx   |   13 +
+ client/src/routes/_authenticated/equipe.tsx   |    6 +
+ client/src/routes/_authenticated/gravar.tsx   |   13 +
+ .../_authenticated/historico/$recordId.tsx    |   11 +
+ .../routes/_authenticated/historico/index.tsx |    6 +
+ client/src/routes/_authenticated/index.tsx    |    4 +-
+ client/src/routes/_authenticated/mais.tsx     |    6 +
+ client/src/routes/_authenticated/sintomas.tsx |    6 +
+ client/src/routes/_authenticated/termos.tsx   |    6 +
+ convex/_generated/api.d.ts                    |   20 +
+ convex/lib/respira/access.ts                  |  141 +++
+ convex/lib/respira/content.ts                 |  280 +++++
+ convex/lib/respira/schema.ts                  |  166 +++
+ convex/respira/assistant.ts                   |  119 ++
+ convex/respira/children.ts                    |  147 +++
+ convex/respira/clinic.ts                      |  319 +++++
+ convex/respira/consents.ts                    |  188 +++
+ convex/respira/monitor.ts                     |   75 ++
+ convex/respira/questions.ts                   |   53 +
+ convex/respira/records.ts                     |  227 ++++
+ convex/schema.ts                              |    4 +
+ docs/architecture.md                          |    7 +-
+ docs/respirakids.md                           |   84 ++
+ 52 files changed, 7626 insertions(+), 124 deletions(-)
+ create mode 100644 client/public/respirakids-logo.png
+ create mode 100644 client/src/components/respira/respira-provider.tsx
+ create mode 100644 client/src/components/respira/respira-shell.tsx
+ create mode 100644 client/src/components/respira/symptom-icon.tsx
+ create mode 100644 client/src/components/respira/ui.tsx
+ create mode 100644 client/src/lib/respira/audio.ts
+ create mode 100644 client/src/lib/respira/format.ts
+ create mode 100644 client/src/lib/respira/search.ts
+ create mode 100644 client/src/pages/respira/clinico.tsx
+ create mode 100644 client/src/pages/respira/criancas.tsx
+ create mode 100644 client/src/pages/respira/duvidas.tsx
+ create mode 100644 client/src/pages/respira/enviar.tsx
+ create mode 100644 client/src/pages/respira/equipe.tsx
+ create mode 100644 client/src/pages/respira/gravar.tsx
+ create mode 100644 client/src/pages/respira/historico.tsx
+ create mode 100644 client/src/pages/respira/home.tsx
+ create mode 100644 client/src/pages/respira/mais.tsx
+ create mode 100644 client/src/pages/respira/sintomas.tsx
+ create mode 100644 client/src/pages/respira/termos.tsx
+ create mode 100644 client/src/routes/_authenticated/clinico.tsx
+ create mode 100644 client/src/routes/_authenticated/conversa.tsx
+ create mode 100644 client/src/routes/_authenticated/criancas.tsx
+ create mode 100644 client/src/routes/_authenticated/dev/todos.tsx
+ create mode 100644 client/src/routes/_authenticated/duvidas.tsx
+ create mode 100644 client/src/routes/_authenticated/enviar.tsx
+ create mode 100644 client/src/routes/_authenticated/equipe.tsx
+ create mode 100644 client/src/routes/_authenticated/gravar.tsx
+ create mode 100644 client/src/routes/_authenticated/historico/$recordId.tsx
+ create mode 100644 client/src/routes/_authenticated/historico/index.tsx
+ create mode 100644 client/src/routes/_authenticated/mais.tsx
+ create mode 100644 client/src/routes/_authenticated/sintomas.tsx
+ create mode 100644 client/src/routes/_authenticated/termos.tsx
+ create mode 100644 convex/lib/respira/access.ts
+ create mode 100644 convex/lib/respira/content.ts
+ create mode 100644 convex/lib/respira/schema.ts
+ create mode 100644 convex/respira/assistant.ts
+ create mode 100644 convex/respira/children.ts
+ create mode 100644 convex/respira/clinic.ts
+ create mode 100644 convex/respira/consents.ts
+ create mode 100644 convex/respira/monitor.ts
+ create mode 100644 convex/respira/questions.ts
+ create mode 100644 convex/respira/records.ts
+ create mode 100644 docs/respirakids.md
+
+diff --git a/AGENTS.md b/AGENTS.md
+index ee23ee6..8ddd393 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -82,6 +82,9 @@ Use these terms in issue titles, plans, and user-facing copy. Do not introduce s
+ | **Onboarding lifecycle** | `pending` → `invited` → `active`                                                 | account status, user state                   |
+ | **Member**               | User's membership in an Organization with a role                                 | user (when meaning the relationship)         |
+ | **Platform Admin**       | Startup operator with cross-org access via allowlist + global authz role         | superadmin, god user                         |
++| **Criança**              | Child profile owned by a family Member; one account can follow several           | paciente, perfil                             |
++| **Registro**             | One breathing observation (`breathRecords`); may be added for a past day         | entrada, log                                 |
++| **Profissional de saúde** | Member allowed into `/clinico` (org admin or listed in `healthProfessionals`)    | médico (for the role)                        |
+ 
+ Read [docs/adr/](./docs/adr/) before changing tenancy, onboarding, or platform admin behavior.
+ 
+diff --git a/README.md b/README.md
+index 8b28847..052435d 100644
+--- a/README.md
++++ b/README.md
+@@ -4,6 +4,10 @@ Instituto Blooma product on the **convexplate** B2B foundation: **Organizations*
+ 
+ Built on Vite, React, TypeScript, and Convex — with local dev, GitHub CI, and Railway deploy.
+ 
++## RespiraKids
++
++This fork hosts **RespiraKids**, a respiratory triage and diary app for children (families, clinical app and data panel). See [docs/respirakids.md](./docs/respirakids.md).
++
+ ## What You Get
+ 
+ - **Organizations** (multi-company isolation) via `@djpanda/convex-tenants`
+@@ -51,6 +55,7 @@ See [railway.toml](./railway.toml) and [docs/environment.md](./docs/environment.
+ 
+ ## Docs
+ 
++- [docs/respirakids.md](./docs/respirakids.md) — RespiraKids screens, data and rules
+ - [SETUP.md](./SETUP.md) — first-run setup
+ - [docs/architecture.md](./docs/architecture.md) — tenancy, authz, onboarding
+ - [docs/updating-downstream.md](./docs/updating-downstream.md) — port template changes into forks
+diff --git a/client/index.html b/client/index.html
+index 839af72..10c4a36 100644
+--- a/client/index.html
++++ b/client/index.html
+@@ -1,9 +1,9 @@
+ <!doctype html>
+-<html lang="en">
++<html lang="pt-BR">
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+-    <title>Instituto Blooma</title>
++    <title>RespiraKids · Instituto Blooma</title>
+     <meta
+       name="description"
+       content="Instituto Blooma connects girls who love STEM with the support they need to shape the future."
+@@ -12,7 +12,7 @@
+     <link rel="preconnect" href="https://fonts.googleapis.com" />
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+     <link
+-      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap"
++      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Fraunces:opsz,wght,SOFT@9..144,500..700,0..100&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+       rel="stylesheet"
+     />
+   </head>
+diff --git a/client/public/respirakids-logo.png b/client/public/respirakids-logo.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..ae70e4c69af47b7cdd80709f890d62e762ffde5d
+GIT binary patch
+literal 33389
+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
+zJ_raG#E
