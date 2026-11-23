@@ -860,6 +860,8 @@ function vOuvir() {
     <h2>Ouça a gravação</h2>
     <p>Dá para ouvir a respiração? Se tiver barulho ou choro, grave de novo.</p>
     <audio controls src="${F.audio.url}"></audio>
+    <canvas class="spec" id="specCanvas" role="img" aria-label="Desenho do som da gravação"></canvas>
+    <p class="small muted" style="margin:6px 0 12px">As faixas claras são a respiração e a tosse.</p>
     ${a.issues.length ? `<div class="notice y">${icon("alert")}<div>${a.issues.join("<br>")}</div></div>` : ""}
     <div class="card">
       ${a.rrAudio ? `<p style="margin:0 0 6px">Respirações: <b>${a.rrAudio} por minuto</b> <span class="small muted">(${confTxt})</span></p>` : `<p style="margin:0 0 6px">O áudio não permitiu contar as respirações.</p>`}
@@ -867,8 +869,7 @@ function vOuvir() {
       ${counter}
     </div>
     <details class="more"><summary>Detalhes da gravação</summary>
-      <canvas class="spec" id="specCanvas" role="img" aria-label="Desenho do som da gravação"></canvas>
-      <p class="small muted" style="margin-top:6px">As faixas claras são a respiração e a tosse.${a.trimmed ? " Já cortamos o 1º e o último segundo." : ""}</p>
+      ${a.trimmed ? `<p class="small muted" style="margin:0">Já cortamos o 1º e o último segundo para tirar cliques e falas.</p>` : ""}
       <div class="qual"><div>Qualidade<b>${a.quality}</b></div><div>Duração<b>${Math.round(a.durRaw)} s</b></div><div>Ruído<b>${noise}</b></div></div>
     </details>
     <div class="grid2">
