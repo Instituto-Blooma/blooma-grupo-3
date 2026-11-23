@@ -138,17 +138,19 @@ const SRC = {
 };
 
 /* ========== sintomas ========== */
+/* Sinais de alerta. grp "emerg": impossível de confundir (bateu o olho, hospital).
+   grp "esforco": esforço para respirar; precisa olhar com calma, por isso vem separado e com "não é". */
 const RED = [
-  { k: "tiragem", t: "Costelas ou pescoço afundando", s: "A pele entre as costelas ou na base do pescoço afunda quando ela puxa o ar", ic: "ribs", why: "Pele afundando entre as costelas ou no pescoço (tiragem) mostra esforço grande para respirar.", src: ["aidpi", "oms"], how: "Levante a blusa e olhe o peito e a barriga por 1 minuto. Se a pele “some para dentro” entre as costelas, abaixo delas ou na base do pescoço a cada respiração, é tiragem." },
-  { k: "estridor", t: "Barulho rouco ao puxar o ar", s: "Som áspero ou agudo quando ela inspira, mesmo parada", ic: "stridor", why: "Barulho rouco ao puxar o ar com a criança calma (estridor) pode indicar a passagem de ar estreitada.", src: ["aidpi", "oms"], how: "É um som alto e áspero que aparece quando ela puxa o ar (não quando solta), parecido com um “ronco agudo”, mesmo sem chorar." },
-  { k: "pausas", t: "Pausas na respiração", s: "Para de respirar por alguns segundos", ic: "pause", why: "Pausas na respiração são um sinal de emergência.", src: ["oms"], how: "O peito para de mexer por vários segundos, principalmente durante o sono, e depois volta." },
-  { k: "roxo", t: "Lábios ou unhas roxos", s: "Cor arroxeada ou acinzentada na boca ou nas unhas", ic: "lips", why: "Lábios ou unhas arroxeados podem indicar pouco oxigênio no sangue.", src: ["oms", "aidpi"], how: "Olhe os lábios, a língua e as unhas na luz natural. Arroxeado ou cinza é sinal de emergência." },
-  { k: "fala", t: "Não consegue falar ou beber", s: "Fala só palavras soltas ou não consegue beber líquidos", ic: "cupx", why: "Falta de ar a ponto de não conseguir falar frases ou beber é sinal de crise grave.", src: ["bts", "aidpi"], how: "Peça para ela contar até 10 ou falar uma frase. Se precisa parar para respirar a cada palavra, ou não consegue tomar água, é grave." },
-  { k: "sono", t: "Muito sonolenta, difícil de acordar", s: "Não responde direito ou volta a dormir logo", ic: "zzz", why: "Criança muito sonolenta ou difícil de acordar é um sinal geral de perigo.", src: ["aidpi"], how: "Ela não abre os olhos quando você chama e toca nela, ou acorda e volta a apagar logo em seguida." },
-  { k: "convulsao", t: "Convulsão", s: "Tremores, corpo duro ou olhar parado", ic: "zap", why: "Convulsão é um sinal geral de perigo.", src: ["aidpi"], how: "Movimentos que ela não controla, corpo rígido ou olhar fixo, sem responder." },
-  { k: "batimento", t: "Narinas abrindo a cada respiração", s: "As asas do nariz abrem e fecham quando ela respira", ic: "nose", why: "Narinas abrindo e fechando a cada respiração (batimento de asa de nariz) mostram esforço grande para respirar.", src: ["oms", "aidpi"], how: "Olhe o nariz dela com calma: as laterais (asas do nariz) se abrem a cada vez que ela puxa o ar." },
-  { k: "gemido", t: "Gemido a cada respiração", s: "Faz um som curto, como um gemido, ao soltar o ar", ic: "moan", why: "Gemido a cada respiração é um sinal de esforço respiratório grave.", src: ["oms"], how: "Um som curto e repetido no fim de cada respiração, mesmo com ela parada, como se estivesse gemendo." },
-  { k: "vomitatudo", t: "Vomita tudo o que come ou bebe", s: "Não para nada no estômago", ic: "vomit", why: "Vomitar tudo o que come ou bebe é um sinal geral de perigo.", src: ["aidpi"], how: "Toda vez que ela come ou bebe, vomita em seguida, e nada fica no estômago." }
+  { k: "roxo", grp: "emerg", t: "Lábios ou unhas roxos", s: "Cor arroxeada ou cinza na boca ou nas unhas", ic: "lips", why: "Lábios ou unhas arroxeados podem indicar pouco oxigênio no sangue.", src: ["oms", "aidpi"], how: "Olhe os lábios, a língua e as unhas na luz natural. Arroxeado ou cinza é sinal de emergência." },
+  { k: "pausas", grp: "emerg", t: "Para de respirar", s: "Fica alguns segundos sem respirar", ic: "pause", why: "Pausas na respiração são um sinal de emergência.", src: ["oms"], how: "O peito para de mexer por vários segundos, principalmente durante o sono, e depois volta." },
+  { k: "convulsao", grp: "emerg", t: "Convulsão", s: "Tremores, corpo duro ou olhar parado", ic: "zap", why: "Convulsão é um sinal geral de perigo.", src: ["aidpi"], how: "Movimentos que ela não controla, corpo rígido ou olhar fixo, sem responder." },
+  { k: "sono", grp: "emerg", t: "Não acorda direito", s: "Difícil de acordar ou volta a apagar logo", ic: "zzz", why: "Criança muito sonolenta ou difícil de acordar é um sinal geral de perigo.", src: ["aidpi"], how: "Ela não abre os olhos quando você chama e toca nela, ou acorda e volta a apagar logo em seguida. Sono normal, em que ela acorda quando você chama, não conta." },
+  { k: "fala", grp: "emerg", t: "Não consegue beber de tanta falta de ar", s: "Ou para no meio da frase para respirar", ic: "cupx", why: "Falta de ar a ponto de não conseguir beber ou falar é sinal de crise grave.", src: ["bts", "aidpi"], how: "Ela não consegue engolir água ou leite porque está sem ar, ou (se já fala frases) precisa parar no meio para respirar." },
+  { k: "vomitatudo", grp: "emerg", t: "Vomita tudo o que come ou bebe", s: "Nada para no estômago", ic: "vomit", why: "Vomitar tudo o que come ou bebe é um sinal geral de perigo.", src: ["aidpi"], how: "Toda vez que ela come ou bebe, vomita em seguida, e nada fica no estômago. Um vômito depois de tossir não conta." },
+  { k: "tiragem", grp: "esforco", t: "Costelas afundando", s: "A pele entre as costelas afunda a cada respiração", no: "Não é a barriga subindo e descendo normalmente.", ic: "ribs", why: "Pele afundando entre as costelas ou no pescoço (tiragem) mostra esforço grande para respirar.", src: ["aidpi", "oms"], how: "Com ela calma, levante a blusa e olhe o peito por 1 minuto. Se a pele “some para dentro” entre as costelas, abaixo delas ou na base do pescoço a cada respiração, é tiragem." },
+  { k: "batimento", grp: "esforco", t: "Narinas abrindo a cada respiração", s: "Abrem e fecham sem parar, mesmo parada", no: "Não é o nariz mexendo ao chorar ou fungar.", ic: "nose", why: "Narinas abrindo e fechando a cada respiração (batimento de asa de nariz) mostram esforço grande para respirar.", src: ["oms", "aidpi"], how: "Com ela calma, olhe o nariz: as laterais (asas do nariz) se abrem toda vez que ela puxa o ar." },
+  { k: "gemido", grp: "esforco", t: "Gemido a cada respiração", s: "Som curto no fim de toda respiração, mesmo parada", no: "Não é choro, manha ou resmungo.", ic: "moan", why: "Gemido a cada respiração é um sinal de esforço respiratório grave.", src: ["oms"], how: "Um som curto e repetido no fim de cada respiração, com ela quieta, como se estivesse gemendo." },
+  { k: "estridor", grp: "esforco", t: "Ruído alto ao PUXAR o ar, mesmo calma", s: "Som áspero, como um guincho, ao inspirar", no: "Não é voz rouca, tosse rouca nem chiado.", ic: "stridor", why: "Ruído alto ao puxar o ar com a criança calma (estridor) pode indicar a passagem de ar estreitada.", src: ["aidpi", "oms"], how: "É um som alto e áspero que aparece quando ela PUXA o ar (não quando solta), mesmo sem chorar e sem agitação. Voz rouca, tosse rouca e chiado (assobio ao soltar o ar) são outra coisa e ficam em “Outros sintomas”." }
 ];
 const COMMON = [
   { k: "tosse", t: "Tosse", ic: "cough", how: "Tosse seca (irritada) ou com catarro.", todo: "Ofereça água várias vezes, lave o nariz com soro e observe se piora à noite." },
@@ -929,14 +931,17 @@ function vOuvir() {
 
 function symTile(s, red) {
   const on = (red ? F.red : F.sym).includes(s.k);
-  return `<button class="stile ${red ? "red" : ""}" data-act="sym" data-k="${s.k}" data-red="${red ? 1 : 0}" aria-pressed="${on}">${icon(s.ic, "lg")}<span class="t">${s.t}</span>${s.s ? `<span class="s">${s.s}</span>` : ""}</button>`;
+  return `<button class="stile ${red ? "red" : ""} ${s.grp === "esforco" ? "esf" : ""}" data-act="sym" data-k="${s.k}" data-red="${red ? 1 : 0}" aria-pressed="${on}">${icon(s.ic, "lg")}<span class="t">${s.t}</span>${s.s ? `<span class="s">${s.s}</span>` : ""}${s.no ? `<span class="s no">${s.no}</span>` : ""}</button>`;
 }
 function vFlowSintomas() {
   return `${stepsBar()}
     <h2>${F.mode === "anterior" ? `Como ${esc(S.profile.nome)} estava?` : `Como ${esc(S.profile.nome)} está agora?`}</h2>
     <p class="muted">Marque o que você vê (ou nada).</p>
-    <div class="sec-title">${icon("alert")}<h3 style="margin:0">Sinais de alerta</h3></div>
-    <div class="sgrid">${RED.map(s => symTile(s, true)).join("")}</div>
+    <div class="sec-title">${icon("alert")}<h3 style="margin:0">Sinais de emergência</h3></div>
+    <div class="sgrid">${RED.filter(s => s.grp === "emerg").map(s => symTile(s, true)).join("")}</div>
+    <div class="sec-title">${icon("lung")}<h3 style="margin:0">Esforço para respirar</h3></div>
+    <p class="small muted" style="margin:-4px 0 8px">Olhe com calma, com a criança quieta. Só marque se tiver certeza.</p>
+    <div class="sgrid">${RED.filter(s => s.grp === "esforco").map(s => symTile(s, true)).join("")}</div>
     ${F.red.length && F.mode !== "anterior" ? `<div class="notice r" style="margin-top:12px">${icon("alert")}<div><b>Você marcou um sinal de alerta.</b> Procure atendimento agora. Lábios roxos, pausas, convulsão ou difícil de acordar: <a href="tel:192"><b>ligue 192</b></a>.</div></div>` : ""}
     <div class="sec-title">${icon("heart")}<h3 style="margin:0">Outros sintomas</h3></div>
     <div class="sgrid">${COMMON.map(s => symTile(s, false)).join("")}</div>
@@ -1031,15 +1036,18 @@ function vQuando() {
 
 /* ========== aba sintomas ========== */
 function vSintomas() {
-  const item = (s, red) => `<details class="card flat" style="padding:12px 14px;margin-bottom:8px"><summary class="row" style="cursor:pointer;list-style:none">${`<span style="color:${red ? "var(--r)" : "var(--teal-d)"}">${icon(s.ic, "lg")}</span>`}<span><b>${s.t}</b>${s.s ? `<br><span class="small muted">${s.s}</span>` : ""}</span></summary>
-    <div style="padding:10px 0 0 46px"><p><b>Como reconhecer:</b> ${s.how}</p><p style="margin:0"><b>O que fazer:</b> ${red ? `Procure atendimento agora. ${["roxo", "pausas", "convulsao", "sono"].includes(s.k) ? '<a href="tel:192"><b>Ligue 192</b></a>.' : ""}` : s.todo}</p>
+  const item = (s, red) => `<details class="card flat" style="padding:12px 14px;margin-bottom:8px"><summary class="row" style="cursor:pointer;list-style:none">${`<span style="color:${red ? (s.grp === "esforco" ? "var(--y)" : "var(--r)") : "var(--teal-d)"}">${icon(s.ic, "lg")}</span>`}<span><b>${s.t}</b>${s.s ? `<br><span class="small muted">${s.s}</span>` : ""}</span></summary>
+    <div style="padding:10px 0 0 46px"><p><b>Como reconhecer:</b> ${s.how}</p>${s.no ? `<p><b>Não confundir:</b> ${s.no}</p>` : ""}<p style="margin:0"><b>O que fazer:</b> ${red ? `Procure atendimento agora. ${s.grp === "emerg" ? '<a href="tel:192"><b>Ligue 192</b></a>.' : ""}` : s.todo}</p>
     ${red ? `<p class="small muted" style="margin:8px 0 0">Fonte: ${s.src.map(x => SRC[x].split(".")[0] + (x === "aidpi" ? " (AIDPI)" : "")).join("; ")}.</p>` : ""}</div></details>`;
   return `<h1>Sintomas</h1>
   <p class="muted">Toque em um símbolo para ver como reconhecer e o que fazer.</p>
   <button class="btn block" data-act="startDiary">${icon("edit", "sm")} Registrar sintomas de hoje</button>
-  <div class="sec-title">${icon("alert")}<h2 style="margin:0">Sinais de alerta</h2></div>
-  <p class="small muted">Qualquer um destes: procure atendimento agora.</p>
-  ${RED.map(s => item(s, true)).join("")}
+  <div class="sec-title">${icon("alert")}<h2 style="margin:0">Sinais de emergência</h2></div>
+  <p class="small muted">Qualquer um destes: ligue 192 ou vá ao pronto-socorro agora.</p>
+  ${RED.filter(s => s.grp === "emerg").map(s => item(s, true)).join("")}
+  <div class="sec-title">${icon("lung")}<h2 style="margin:0">Esforço para respirar</h2></div>
+  <p class="small muted">Olhe com calma, com a criança quieta. Se tiver certeza de que está acontecendo, procure atendimento.</p>
+  ${RED.filter(s => s.grp === "esforco").map(s => item(s, true)).join("")}
   <div class="sec-title">${icon("heart")}<h2 style="margin:0">Sintomas comuns</h2></div>
   <p class="small muted">Geralmente dá para cuidar e observar em casa. Fique de olho se eles aumentarem.</p>
   ${COMMON.map(s => item(s, false)).join("")}

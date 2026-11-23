@@ -233,6 +233,9 @@ body.medico main{max-width:1040px;padding-bottom:40px}
 .medhead img{width:46px;height:46px;border-radius:50%}
 .medtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .retorno{border-left:4px solid var(--teal-d)}
+/* sinais de esforço para respirar: alerta, mas com cor mais calma e o "não é" */
+.stile.esf .ic{color:var(--y)}
+.stile .s.no{font-style:italic}
 /* detalhes extras da gravação (tosses, chiado, ruído…) */
 .qual.qual-more{grid-template-columns:repeat(2,1fr)}
 .qual.qual-more span{display:block;margin-top:2px;font-size:.76rem}
