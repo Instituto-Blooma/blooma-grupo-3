@@ -77,7 +77,15 @@ const IC = {
   edit: "M4 20h4L19 9l-4-4L4 16zM14 6l4 4",
   calendar: "M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h3",
   plus: "M12 5v14M5 12h14",
-  star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"
+  star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
+  nose: "M12 3c0 5-4 8-4 11a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3c0-3-4-6-4-11M5 15l-2-1M19 15l2-1M5 18l-2 1M19 18l2 1",
+  moan: "M4 12c2-4 4-4 6 0s4 4 6 0 4-4 4-4M3 18h18",
+  vomit: C(12, 7, 4) + "M10 13c0 3 4 3 4 0M9 17c-1 2 0 4 3 4s4-2 3-4",
+  chest: "M12 4v16M12 8c-3 0-6 1-7 3M12 8c3 0 6 1 7 3M14 13l3 2-3 2",
+  ear: "M8 10a5 5 0 1 1 10 0c0 4-4 5-4 8a3 3 0 0 1-6 0M11 10a2 2 0 1 1 4 0",
+  sneeze: C(9, 11, 6) + "M16 7l4-2M17 11h5M16 15l4 2",
+  snore: "M4 14c3 0 3-4 6-4M14 4h5l-5 5h5M10 17h3l-3 3h3",
+  plate: C(12, 12, 8) + C(12, 12, 4) + "M2 4v6M22 4v16"
 };
 const icon = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n] || ""}"/></svg>`;
 
@@ -137,7 +145,10 @@ const RED = [
   { k: "roxo", t: "Lábios ou unhas roxos", s: "Cor arroxeada ou acinzentada na boca ou nas unhas", ic: "lips", why: "Lábios ou unhas arroxeados podem indicar pouco oxigênio no sangue.", src: ["oms", "aidpi"], how: "Olhe os lábios, a língua e as unhas na luz natural. Arroxeado ou cinza é sinal de emergência." },
   { k: "fala", t: "Não consegue falar ou beber", s: "Fala só palavras soltas ou não consegue beber líquidos", ic: "cupx", why: "Falta de ar a ponto de não conseguir falar frases ou beber é sinal de crise grave.", src: ["bts", "aidpi"], how: "Peça para ela contar até 10 ou falar uma frase. Se precisa parar para respirar a cada palavra, ou não consegue tomar água, é grave." },
   { k: "sono", t: "Muito sonolenta, difícil de acordar", s: "Não responde direito ou volta a dormir logo", ic: "zzz", why: "Criança muito sonolenta ou difícil de acordar é um sinal geral de perigo.", src: ["aidpi"], how: "Ela não abre os olhos quando você chama e toca nela, ou acorda e volta a apagar logo em seguida." },
-  { k: "convulsao", t: "Convulsão", s: "Tremores, corpo duro ou olhar parado", ic: "zap", why: "Convulsão é um sinal geral de perigo.", src: ["aidpi"], how: "Movimentos que ela não controla, corpo rígido ou olhar fixo, sem responder." }
+  { k: "convulsao", t: "Convulsão", s: "Tremores, corpo duro ou olhar parado", ic: "zap", why: "Convulsão é um sinal geral de perigo.", src: ["aidpi"], how: "Movimentos que ela não controla, corpo rígido ou olhar fixo, sem responder." },
+  { k: "batimento", t: "Narinas abrindo a cada respiração", s: "As asas do nariz abrem e fecham quando ela respira", ic: "nose", why: "Narinas abrindo e fechando a cada respiração (batimento de asa de nariz) mostram esforço grande para respirar.", src: ["oms", "aidpi"], how: "Olhe o nariz dela com calma: as laterais (asas do nariz) se abrem a cada vez que ela puxa o ar." },
+  { k: "gemido", t: "Gemido a cada respiração", s: "Faz um som curto, como um gemido, ao soltar o ar", ic: "moan", why: "Gemido a cada respiração é um sinal de esforço respiratório grave.", src: ["oms"], how: "Um som curto e repetido no fim de cada respiração, mesmo com ela parada, como se estivesse gemendo." },
+  { k: "vomitatudo", t: "Vomita tudo o que come ou bebe", s: "Não para nada no estômago", ic: "vomit", why: "Vomitar tudo o que come ou bebe é um sinal geral de perigo.", src: ["aidpi"], how: "Toda vez que ela come ou bebe, vomita em seguida, e nada fica no estômago." }
 ];
 const COMMON = [
   { k: "tosse", t: "Tosse", ic: "cough", how: "Tosse seca (irritada) ou com catarro.", todo: "Ofereça água várias vezes, lave o nariz com soro e observe se piora à noite." },
@@ -147,7 +158,14 @@ const COMMON = [
   { k: "coriza", t: "Nariz escorrendo ou entupido", ic: "drop", how: "Secreção no nariz, espirros ou nariz trancado.", todo: "Soro fisiológico no nariz várias vezes ao dia e ambiente arejado." },
   { k: "garganta", t: "Dor de garganta", ic: "throat", how: "Reclama para engolir ou está rouca.", todo: "Líquidos e alimentos mornos ou frios, o que ela aceitar melhor." },
   { k: "quieto", t: "Mais quieta que o normal", s: "Molinha, sem vontade de brincar", ic: "moon", how: "Brinca menos, quer ficar deitada, mas acorda e responde normalmente.", todo: "Observe de perto. Se ficar difícil de acordar, é sinal de alerta." },
-  { k: "vomito", t: "Enjoo ou vômito", ic: "face", how: "Enjoo ou vômitos, às vezes depois de tossir muito.", todo: "Ofereça líquidos aos poucos. Se vomitar tudo o que bebe, procure atendimento." }
+  { k: "vomito", t: "Enjoo ou vômito", ic: "face", how: "Enjoo ou vômitos, às vezes depois de tossir muito.", todo: "Ofereça líquidos aos poucos. Se vomitar tudo o que come ou bebe, é sinal de alerta: procure atendimento." },
+  { k: "dorpeito", t: "Dor no peito", s: "Ao respirar fundo ou tossir", ic: "chest", how: "Ela reclama de dor no peito ou nas costas quando respira fundo ou tosse.", todo: "Deixe-a descansar e fale com o pediatra hoje, principalmente se tiver febre." },
+  { k: "tosselonga", t: "Tosse há mais de 3 semanas", s: "Não melhora há muito tempo", ic: "calendar", how: "A tosse começou há mais de 3 semanas e continua, mesmo que fraca.", todo: "Marque uma consulta com o pediatra para investigar a causa." },
+  { k: "tossenoite", t: "Tosse que acorda à noite", ic: "moon", how: "A tosse acorda a criança ou piora muito durante a noite.", todo: "Deixe a cabeceira um pouco mais alta e o nariz limpo. Se ela tem asma, siga o plano de ação do pediatra." },
+  { k: "ouvido", t: "Dor de ouvido", ic: "ear", how: "Reclama de dor no ouvido, mexe muito na orelha ou chora ao deitar.", todo: "Se vier com febre ou sair secreção do ouvido, procure o pediatra." },
+  { k: "alergia", t: "Espirros e coceira", s: "No nariz ou nos olhos", ic: "sneeze", how: "Espirra várias vezes seguidas, coça o nariz ou os olhos, olhos lacrimejando.", todo: "Lave o nariz com soro, mantenha a casa arejada e sem poeira e evite fumaça perto dela." },
+  { k: "ronco", t: "Ronco ou respira pela boca", ic: "snore", how: "Ronca ao dormir ou fica de boca aberta para respirar.", todo: "Lave o nariz com soro antes de dormir. Se o ronco tiver pausas, isso é sinal de alerta." },
+  { k: "apetite", t: "Comendo menos", s: "Sem fome, mas bebendo", ic: "plate", how: "Come menos que o normal, mas ainda aceita líquidos.", todo: "Ofereça líquidos várias vezes e porções pequenas. Se não conseguir beber, é sinal de alerta." }
 ];
 const SYM_ALL = Object.fromEntries([...RED, ...COMMON].map(s => [s.k, s]));
 
@@ -197,6 +215,17 @@ function triage(rec, profile) {
   if (sym.has("febre") && (sym.has("cansaco") || sym.has("chiado"))) up(1, "Febre junto com dificuldade para respirar precisa de avaliação no mesmo dia.", ["aidpi", "oms"]);
   if (sym.has("quieto")) up(1, "Criança mais quieta ou molinha que o normal deve ser observada de perto.", ["aidpi"]);
   if (sym.has("vomito")) up(1, "Com enjoo ou vômito, ofereça líquidos aos poucos. Se ela vomitar tudo, procure atendimento.", ["aidpi"]);
+  if (sym.has("dorpeito")) up(1, "Dor no peito ao respirar ou tossir precisa ser avaliada pelo pediatra, principalmente junto com febre.", ["aidpi", "sbp"]);
+  if (sym.has("tosselonga")) up(1, "Tosse há mais de 3 semanas deve ser investigada pelo pediatra.", ["sbp"]);
+  const condAsma = ((profile && profile.cond) || []).includes("asma");
+  if (sym.has("tossenoite")) {
+    if (condAsma) up(1, "Tosse que acorda à noite numa criança com asma pode indicar que a asma não está controlada.", ["gina"]);
+    else reasons.push({ l: 0, t: "Tosse à noite costuma piorar com nariz entupido e ar seco. Se acordar a criança várias noites, converse com o pediatra.", src: ["sbp"] });
+  }
+  if (sym.has("ouvido")) reasons.push({ l: 0, t: "Dor de ouvido é comum junto com resfriado. Com febre ou secreção saindo do ouvido, procure o pediatra.", src: ["sbp"] });
+  if (sym.has("alergia")) reasons.push({ l: 0, t: "Espirros e coceira no nariz ou nos olhos costumam ser alergia ou irritação pelo ar.", src: ["sbp"] });
+  if (sym.has("ronco")) reasons.push({ l: 0, t: "Ronco e respiração pela boca costumam vir do nariz entupido. Se houver pausas na respiração durante o sono, é sinal de alerta.", src: ["sbp"] });
+  if (sym.has("apetite")) reasons.push({ l: 0, t: "Comer menos é comum quando a criança está doente. O mais importante é continuar bebendo líquidos.", src: ["aidpi"] });
   const a = rec.audio;
   if (a && a.tonalSec >= 1) up(1, "A gravação tem sons parecidos com chiado (análise experimental). Confira se você escuta assobio no peito.", ["pramono", "corsa"]);
   if (a && a.coughs >= 6) reasons.push({ l: 0, t: `A gravação registrou cerca de ${a.coughs} tosses em 20 segundos.`, src: [] });
@@ -1138,7 +1167,7 @@ function vDuvidas() {
 }
 
 /* ========== chatbot ========== */
-const URGENT_RE = /(roxo|roxa|arroxead|nao acorda|desmai|convuls|parou de respirar|pausa|afundand|tiragem|nao consegue respirar|sufoc|engasg)/;
+const URGENT_RE = /(roxo|roxa|arroxead|nao acorda|desmai|convuls|parou de respirar|pausa|afundand|tiragem|nao consegue respirar|sufoc|engasg|gemend|gemid|asa do nariz|narinas? abr|vomita tudo|vomitando tudo)/;
 function botIntro() { return `Oi! Sou o assistente de dúvidas do RespiraKids. Posso explicar cuidados do dia a dia, sinais de alerta e o histórico${S.profile ? " de " + S.profile.nome : ""}. Não faço diagnóstico. Em emergência, ligue 192.`; }
 function vConversa() {
   const msgs = S.chat.slice(-40);
