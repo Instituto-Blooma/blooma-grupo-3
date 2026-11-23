@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useConvex, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { api } from '../../../convex/_generated/api';
+import { AuthLoadingScreen } from '@/components/auth-loading-screen';
 import { createRespiraRuntime } from './cloud';
 import { MARKUP, startRespira } from './legacy/respira-app.js';
 import legacyCss from './legacy/respira.css?inline';
@@ -72,7 +73,7 @@ export function RespiraKidsPage() {
   }, [convex, meId, meAdmin, meRole, meName]);
 
   if (me === undefined) {
-    return <div className="p-8 text-center text-muted-foreground">Carregando RespiraKids…</div>;
+    return <AuthLoadingScreen />;
   }
   return <div ref={hostRef} />;
 }

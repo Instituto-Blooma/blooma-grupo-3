@@ -226,3 +226,50 @@ body.medico main{max-width:1040px;padding-bottom:40px}
 .medhead img{width:46px;height:46px;border-radius:50%}
 .medtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .retorno{border-left:4px solid var(--teal-d)}
+
+/* ========== computador: menu lateral e conteúdo mais largo (o celular continua igual) ========== */
+@media (min-width:960px){
+  body{font-size:17.5px}
+  .topbar{padding:12px 28px;z-index:30}
+  .topbar img{width:40px;height:40px}
+  .brand{font-size:1.4rem}
+
+  /* abas viram menu lateral */
+  .tabbar{top:0;bottom:0;left:0;right:auto;width:232px;z-index:15;flex-direction:column;justify-content:flex-start;gap:6px;
+    padding:88px 14px 24px;border-top:0;border-right:1px solid var(--line);background:var(--card)}
+  .tabbar a{flex:none;flex-direction:row;justify-content:flex-start;gap:14px;font-size:1.02rem;padding:12px 16px}
+  .tabbar a:hover{background:var(--field)}
+  .tabbar a[aria-current="page"]{background:var(--teal-l)}
+
+  /* conteúdo ao lado do menu */
+  /* a coluna de conteúdo fica centralizada no espaço ao lado do menu */
+  main{--col:860px;max-width:none;margin:0 0 0 232px;padding:32px max(48px,calc((100vw - 232px - var(--col)) / 2)) 56px}
+  main>.card,main>.notice,main>.lvl{margin-bottom:16px}
+  body.wide main{--col:1100px}
+  body.no-tabs main{--col:720px;margin-left:0;padding-left:max(24px,calc((100vw - var(--col)) / 2));padding-right:max(24px,calc((100vw - var(--col)) / 2))}
+
+  /* áreas de médico e hospital: largura toda, sem menu */
+  body.medico main{margin:0 auto;max-width:1180px;padding:28px 40px 48px}
+
+  /* início: botão de gravar e textos com mais respiro */
+  .hero{padding:16px 0 8px}
+  .hero p{max-width:52ch}
+  .micwrap{width:340px}
+
+  /* grades mais largas */
+  .sgrid{grid-template-columns:repeat(3,1fr)}
+  .faces{gap:10px}
+  .face{padding:14px 4px;font-size:.82rem}
+  .guide{grid-template-columns:repeat(4,1fr)}
+  .qual{gap:12px}
+  .chart{height:180px}
+
+  /* conversa e avisos sem as abas de baixo */
+  .composer{bottom:0}
+  .toast{bottom:32px;left:calc(50% + 116px)}
+  body.no-tabs .toast,body.medico .toast{left:50%}
+  .consent-box{max-height:52vh}
+}
+@media (min-width:1280px){
+  main{--col:920px}
+}

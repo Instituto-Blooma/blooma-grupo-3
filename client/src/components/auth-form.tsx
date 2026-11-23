@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useAuthActions } from '@convex-dev/auth/react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BloomaWordmark } from '@/components/blooma-brand';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { RESPIRA } from '@/components/respira-brand';
 
 function GoogleMark() {
   return (
-    <svg aria-hidden="true" className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
       <path
         d="M21.6 12.23c0-.74-.07-1.45-.19-2.13H12v4.03h5.39a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.89-1.74 2.98-4.3 2.98-7.42Z"
         fill="#4285F4"
@@ -29,6 +27,7 @@ function GoogleMark() {
   );
 }
 
+/** Botão de entrar com Google, no estilo do RespiraKids. */
 export function AuthForm() {
   const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,34 +37,31 @@ export function AuthForm() {
     try {
       await signIn('google', { redirectTo: '/' });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to sign in with Google');
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível entrar com o Google. Tente de novo.'
+      );
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-4">
-        <BloomaWordmark className="justify-center" />
-        <div className="space-y-1 text-center">
-          <CardTitle className="font-serif text-2xl font-semibold tracking-tight">
-            Sign in
-          </CardTitle>
-          <CardDescription>Continue with Google to access Instituto Blooma.</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button
-          type="button"
-          className="w-full"
-          onClick={handleGoogleSignIn}
-          disabled={isLoading}
-          data-testid="button-google-signin"
-        >
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleMark />}
-          Continue with Google
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={isLoading}
+        data-testid="button-google-signin"
+        className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 bg-white px-5 py-4 text-lg font-bold shadow-sm transition hover:shadow-md disabled:opacity-60"
+        style={{ borderColor: RESPIRA.teal, color: RESPIRA.ink, fontFamily: RESPIRA.sans }}
+      >
+        {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleMark />}
+        Entrar com o Google
+      </button>
+      <p className="text-center text-sm" style={{ color: RESPIRA.ink2, fontFamily: RESPIRA.sans }}>
+        Use a sua conta do Google. Na primeira vez, a conta do RespiraKids é criada automaticamente.
+      </p>
+    </div>
   );
 }

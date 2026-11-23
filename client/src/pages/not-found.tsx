@@ -1,23 +1,30 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { BloomaWordmark } from '@/components/blooma-brand';
-import { AlertCircle } from 'lucide-react';
+import { RESPIRA, RespiraWordmark } from '@/components/respira-brand';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <BloomaWordmark compact className="mb-6" />
-          <div className="flex mb-4 gap-2">
-            <AlertCircle className="h-8 w-8 text-destructive" />
-            <h1 className="font-serif text-2xl font-semibold">404 Page Not Found</h1>
-          </div>
-
-          <p className="mt-4 text-sm text-muted-foreground">
-            Did you forget to add the page to the router?
-          </p>
-        </CardContent>
-      </Card>
+    <div
+      className="min-h-screen w-full flex items-center justify-center p-4"
+      style={{ background: RESPIRA.bg, color: RESPIRA.ink, fontFamily: RESPIRA.sans }}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl border bg-white p-8 shadow-lg"
+        style={{ borderColor: '#CFE0DE' }}
+      >
+        <RespiraWordmark className="mb-6" />
+        <h1 className="mb-2 text-2xl font-semibold" style={{ fontFamily: RESPIRA.serif }}>
+          Página não encontrada
+        </h1>
+        <p className="mb-6" style={{ color: RESPIRA.ink2 }}>
+          Este endereço não existe no RespiraKids.
+        </p>
+        <a
+          href="/"
+          className="inline-flex rounded-2xl px-5 py-3 font-bold text-white"
+          style={{ background: RESPIRA.teal }}
+        >
+          Ir para o início
+        </a>
+      </div>
     </div>
   );
 }

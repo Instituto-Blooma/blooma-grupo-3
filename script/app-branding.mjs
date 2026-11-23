@@ -77,9 +77,9 @@ export function resolvePrNumberSync(env = process.env) {
  * @param {'production' | 'staging' | 'development'} appEnv
  */
 export function getBaseTitlePrefix(appEnv) {
-  if (appEnv === 'staging') return 'Staging';
-  if (appEnv === 'development') return 'Dev';
-  return 'Instituto Blooma';
+  if (appEnv === 'staging') return 'RespiraKids (teste)';
+  if (appEnv === 'development') return 'RespiraKids (dev)';
+  return 'RespiraKids';
 }
 
 /**
@@ -104,9 +104,8 @@ export function getAppTitlePrefix({ appEnv, isPrEnv, prNumber }) {
  *   isPrEnv: boolean;
  * }} branding
  */
-export function getFaviconHref({ appEnv, isPrEnv }) {
-  if (isPrEnv) return '/favicon-pr.png';
-  return appEnv === 'production' ? '/favicon.png' : '/favicon-staging.png';
+export function getFaviconHref(_branding) {
+  return '/respirakids-logo.png';
 }
 
 /**
