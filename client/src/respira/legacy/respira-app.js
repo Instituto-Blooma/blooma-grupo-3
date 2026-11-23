@@ -846,6 +846,27 @@ function vMic() {
       <button class="btn ghost block" data-act="pickFile">${icon("upload", "sm")} Enviar arquivo de áudio</button></details>`;
 }
 
+/* Detalhes extras da análise do áudio, em palavras simples (tosses, chiado, ruído…). */
+function audioDetails(a) {
+  const dur = a.dur || a.durRaw || 0;
+  const perMin = (n) => dur > 0 ? Math.round(n / dur * 60) : 0;
+  const noise = a.snr >= 10 ? "baixo" : a.snr >= 5 ? "médio" : "alto";
+  const vol = a.peak >= 0.05 ? "bom" : a.peak >= 0.01 ? "baixo" : "muito baixo";
+  const conf = { alta: "confiança alta", media: "confiança média", baixa: "confiança baixa" }[a.conf] || "";
+  const tile = (label, value, sub, warn) => `<div${warn ? ' style="border-color:var(--y);background:var(--y-bg)"' : ""}>${label}<b>${value}</b>${sub ? `<span class="small muted">${sub}</span>` : ""}</div>`;
+  const wheeze = a.tonalSec >= 1;
+  return `<div class="qual qual-more">
+      ${tile("Tosses", a.coughs || 0, a.coughs ? `≈ ${perMin(a.coughs)} por minuto` : "nenhuma ouvida", a.coughs >= 6)}
+      ${tile("Sons de chiado", wheeze ? "possível" : "não", `${(a.tonalSec || 0).toFixed(1)} s de som de assobio`, wheeze)}
+      ${tile("Respirações", a.rrAudio ? `${a.rrAudio}/min` : "–", a.rrAudio ? conf : "não deu para contar")}
+      ${tile("Qualidade", a.quality, "", a.quality === "ruim")}
+      ${tile("Ruído em volta", noise, `sinal ${a.snr} dB acima do ruído`, noise === "alto")}
+      ${a.peak !== undefined ? tile("Volume", vol, a.clipping ? "o som estourou em alguns trechos" : "", vol !== "bom" || a.clipping) : ""}
+      ${tile("Duração", `${Math.round(a.durRaw)} s`, a.trimmed ? `${Math.round(dur)} s analisados` : "")}
+      ${tile("Picos de som", `${a.peaksPerMin || 0}/min`, "batidas de som por minuto")}
+    </div>
+    <p class="small muted" style="margin:10px 0 0">${a.trimmed ? "Cortamos o 1º e o último segundo para tirar cliques e falas. " : ""}A contagem de tosses e de chiado é experimental: confira ouvindo a gravação. Ela ajuda o médico, mas não é diagnóstico.</p>`;
+}
 function vOuvir() {
   const a = F.audio.an;
   const noise = a.snr >= 10 ? "baixo" : a.snr >= 5 ? "médio" : "alto";
@@ -869,8 +890,7 @@ function vOuvir() {
       ${counter}
     </div>
     <details class="more"><summary>Detalhes da gravação</summary>
-      ${a.trimmed ? `<p class="small muted" style="margin:0">Já cortamos o 1º e o último segundo para tirar cliques e falas.</p>` : ""}
-      <div class="qual"><div>Qualidade<b>${a.quality}</b></div><div>Duração<b>${Math.round(a.durRaw)} s</b></div><div>Ruído<b>${noise}</b></div></div>
+      ${audioDetails(a)}
     </details>
     <div class="grid2">
       <button class="btn ${bad ? "" : "ghost"}" data-act="redo">${icon("mic", "sm")} Gravar de novo</button>
@@ -1071,7 +1091,8 @@ function vRegistro() {
   <div class="card"><p>${icon("lung", "sm")} ${rrText(r.rr)}</p>
     <p class="small">${[...r.red, ...r.sym].map(k => SYM_ALL[k].t).join(", ") || "Sem sintomas marcados"}</p>
     ${envTxt ? `<p class="small muted" style="margin:0">${icon("sun", "sm")} ${esc(envTxt)}</p>` : ""}
-    ${r.hasAudio ? `<div class="hr"></div><audio controls id="recAudio"></audio><p class="small muted" style="margin:0">Áudio de ${r.audio ? Math.round(r.audio.durRaw) : "–"} s, qualidade ${r.audio ? r.audio.quality : "–"}.</p>` : ""}
+    ${r.hasAudio ? `<div class="hr"></div><audio controls id="recAudio"></audio><p class="small muted" style="margin:0">Áudio de ${r.audio ? Math.round(r.audio.durRaw) : "–"} s, qualidade ${r.audio ? r.audio.quality : "–"}.</p>
+      ${r.audio ? `<details class="more" style="margin-bottom:0"><summary>Detalhes da gravação</summary>${audioDetails(r.audio)}</details>` : ""}` : ""}
     <p class="small muted" style="margin:8px 0 0">Preocupação antes: ${r.anxBefore || "–"}/5 · Segurança depois: ${r.secureAfter || "–"}/5</p></div>
   ${S.retornos && S.retornos[r.id] ? (() => { const rt = S.retornos[r.id]; return `<div class="card retorno"><div class="row">${icon("cross", "lg")}<div><h3 style="margin:0">Revisão do profissional de saúde</h3><p class="small muted" style="margin:0">${fmtDate(rt.t)}, ${fmtTime(rt.t)} · classificação: <span class="dot d${rt.esp}"></span> ${LEVELS[rt.esp].name}</p></div></div><p style="margin:10px 0 0;white-space:pre-wrap">${esc(rt.nota)}</p></div>`; })() : ""}
   ${rb.html}${srcList(rb.ids)}

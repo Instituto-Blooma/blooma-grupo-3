@@ -233,6 +233,10 @@ body.medico main{max-width:1040px;padding-bottom:40px}
 .medhead img{width:46px;height:46px;border-radius:50%}
 .medtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .retorno{border-left:4px solid var(--teal-d)}
+/* detalhes extras da gravação (tosses, chiado, ruído…) */
+.qual.qual-more{grid-template-columns:repeat(2,1fr)}
+.qual.qual-more span{display:block;margin-top:2px;font-size:.76rem}
+@media (min-width:640px){.qual.qual-more{grid-template-columns:repeat(4,1fr)}}
 /* aviso de emergência com botão de ligar */
 .notice>div{flex:1;min-width:0}
 /* celulares estreitos: botões lado a lado cabem em uma linha */
