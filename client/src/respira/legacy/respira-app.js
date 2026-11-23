@@ -144,7 +144,7 @@ const RED = [
   { k: "roxo", grp: "emerg", t: "Lábios ou unhas roxos", s: "Cor arroxeada ou cinza na boca ou nas unhas", ic: "lips", why: "Lábios ou unhas arroxeados podem indicar pouco oxigênio no sangue.", src: ["oms", "aidpi"], how: "Olhe os lábios, a língua e as unhas na luz natural. Arroxeado ou cinza é sinal de emergência." },
   { k: "pausas", grp: "emerg", t: "Para de respirar", s: "Fica alguns segundos sem respirar", ic: "pause", why: "Pausas na respiração são um sinal de emergência.", src: ["oms"], how: "O peito para de mexer por vários segundos, principalmente durante o sono, e depois volta." },
   { k: "convulsao", grp: "emerg", t: "Convulsão", s: "Tremores, corpo duro ou olhar parado", ic: "zap", why: "Convulsão é um sinal geral de perigo.", src: ["aidpi"], how: "Movimentos que ela não controla, corpo rígido ou olhar fixo, sem responder." },
-  { k: "sono", grp: "emerg", t: "Não acorda direito", s: "Difícil de acordar ou volta a apagar logo", ic: "zzz", why: "Criança muito sonolenta ou difícil de acordar é um sinal geral de perigo.", src: ["aidpi"], how: "Ela não abre os olhos quando você chama e toca nela, ou acorda e volta a apagar logo em seguida. Sono normal, em que ela acorda quando você chama, não conta." },
+  { k: "sono", grp: "emerg", t: "Não reage quando você chama e toca", s: "Mesmo chamando alto e mexendo nela", no: "Dormindo e acorda (mesmo resmungando ou chorando) quando você chama não conta.", ic: "zzz", why: "Criança que não reage quando é chamada e tocada (muito sonolenta ou desacordada) é um sinal geral de perigo.", src: ["aidpi"], how: "Faça o teste: chame pelo nome em voz alta e toque no ombro dela. Se ela não abrir os olhos, não chorar e não reagir, é emergência. Se ela acorda, reclama ou chora, está reagindo." },
   { k: "fala", grp: "emerg", t: "Não consegue beber de tanta falta de ar", s: "Ou para no meio da frase para respirar", ic: "cupx", why: "Falta de ar a ponto de não conseguir beber ou falar é sinal de crise grave.", src: ["bts", "aidpi"], how: "Ela não consegue engolir água ou leite porque está sem ar, ou (se já fala frases) precisa parar no meio para respirar." },
   { k: "vomitatudo", grp: "emerg", t: "Vomita tudo o que come ou bebe", s: "Nada para no estômago", ic: "vomit", why: "Vomitar tudo o que come ou bebe é um sinal geral de perigo.", src: ["aidpi"], how: "Toda vez que ela come ou bebe, vomita em seguida, e nada fica no estômago. Um vômito depois de tossir não conta." },
   { k: "tiragem", grp: "esforco", t: "Costelas afundando", s: "A pele entre as costelas afunda a cada respiração", no: "Não é a barriga subindo e descendo normalmente.", ic: "ribs", why: "Pele afundando entre as costelas ou no pescoço (tiragem) mostra esforço grande para respirar.", src: ["aidpi", "oms"], how: "Com ela calma, levante a blusa e olhe o peito por 1 minuto. Se a pele “some para dentro” entre as costelas, abaixo delas ou na base do pescoço a cada respiração, é tiragem." },
@@ -159,7 +159,7 @@ const COMMON = [
   { k: "febre", t: "Febre", s: "37,8 °C ou mais no termômetro", ic: "thermo", how: "Temperatura medida com termômetro igual ou acima de 37,8 °C.", todo: "Ofereça líquidos, roupas leves. Se durar 3 dias ou vier com falta de ar, procure o pediatra." },
   { k: "coriza", t: "Nariz escorrendo ou entupido", ic: "drop", how: "Secreção no nariz, espirros ou nariz trancado.", todo: "Soro fisiológico no nariz várias vezes ao dia e ambiente arejado." },
   { k: "garganta", t: "Dor de garganta", ic: "throat", how: "Reclama para engolir ou está rouca.", todo: "Líquidos e alimentos mornos ou frios, o que ela aceitar melhor." },
-  { k: "quieto", t: "Mais quieta que o normal", s: "Molinha, sem vontade de brincar", ic: "moon", how: "Brinca menos, quer ficar deitada, mas acorda e responde normalmente.", todo: "Observe de perto. Se ficar difícil de acordar, é sinal de alerta." },
+  { k: "quieto", t: "Mais quieta que o normal", s: "Molinha, sem vontade de brincar", ic: "moon", how: "Brinca menos, quer ficar deitada, mas acorda e responde normalmente.", todo: "Observe de perto. Se ela não reagir quando você chama e toca, é sinal de alerta." },
   { k: "vomito", t: "Enjoo ou vômito", ic: "face", how: "Enjoo ou vômitos, às vezes depois de tossir muito.", todo: "Ofereça líquidos aos poucos. Se vomitar tudo o que come ou bebe, é sinal de alerta: procure atendimento." },
   { k: "dorpeito", t: "Dor no peito", s: "Ao respirar fundo ou tossir", ic: "chest", how: "Ela reclama de dor no peito ou nas costas quando respira fundo ou tosse.", todo: "Deixe-a descansar e fale com o pediatra hoje, principalmente se tiver febre." },
   { k: "tosselonga", t: "Tosse há mais de 3 semanas", s: "Não melhora há muito tempo", ic: "calendar", how: "A tosse começou há mais de 3 semanas e continua, mesmo que fraca.", todo: "Marque uma consulta com o pediatra para investigar a causa." },
@@ -251,7 +251,7 @@ function actionsFor(level, airIssue, profile) {
   const cond = (profile && profile.cond) || [];
   if (level === 2) return [
     "Procure agora um pronto-atendimento pediátrico. Não espere para gravar de novo.",
-    "Se os lábios estiverem roxos, se ela parar de respirar, tiver convulsão ou não acordar, ligue 192 (SAMU).",
+    "Se os lábios estiverem roxos, se ela parar de respirar, tiver convulsão ou não reagir quando você chama e toca, ligue 192 (SAMU).",
     "Mantenha a criança sentada, no colo ou recostada, e o mais calma possível.",
     cond.includes("asma") ? "Se o pediatra deixou um plano de ação para crise, use o que está escrito nele a caminho do atendimento." : "Leve os remédios que ela usa e o celular com este histórico."
   ];
@@ -277,7 +277,7 @@ const FAQ = [
   { q: "Como sei se a respiração está rápida?", tag: "olho", src: ["pals", "bts"], a: "Com a criança calma ou dormindo, levante a blusa e conte quantas vezes a barriga sobe em 1 minuto inteiro. Entre 6 e 11 anos, o esperado em repouso fica entre 18 e 25. De 26 a 30, conte de novo depois que ela se acalmar. Acima de 30, fale com o pediatra no mesmo dia; 40 ou mais, procure atendimento." },
   { q: "O que é chiado no peito?", tag: "olho", src: ["gina"], a: "É um som fininho, como um assobio, quando a criança solta o ar. Acontece quando os canos do pulmão ficam mais fechados, como na asma ou na bronquite. Chiado merece atenção: grave, observe e converse com o pediatra." },
   { q: "O que é tiragem (costela afundando)?", tag: "urgente", src: ["aidpi"], a: "É quando a pele entre as costelas, abaixo delas ou na base do pescoço afunda a cada respiração. Mostra que ela está fazendo muita força para respirar. Procure atendimento agora." },
-  { q: "Quando devo ligar 192 (SAMU)?", tag: "urgente", src: ["aidpi", "oms"], a: "Ligue se a criança tiver lábios ou unhas roxos, parar de respirar por alguns segundos, tiver convulsão, ficar muito difícil de acordar ou não conseguir falar nem beber de tanta falta de ar." },
+  { q: "Quando devo ligar 192 (SAMU)?", tag: "urgente", src: ["aidpi", "oms"], a: "Ligue se a criança tiver lábios ou unhas roxos, parar de respirar por alguns segundos, tiver convulsão, não reagir quando você chama e toca ou não conseguir falar nem beber de tanta falta de ar." },
   { q: "Os lábios ficaram arroxeados. O que faço?", tag: "urgente", src: ["oms"], a: "Ligue 192 imediatamente. Deixe a criança sentada ou recostada, afrouxe roupas apertadas e fique com ela até o atendimento chegar." },
   { q: "Tosse seca por causa do tempo seco: o que fazer?", tag: "casa", src: ["umid", "sbp"], a: "Ofereça água várias vezes ao dia, lave o nariz com soro fisiológico, evite brincadeiras ao ar livre nas horas mais quentes e secas, e deixe uma toalha úmida ou bacia de água no quarto. Se aparecer chiado, febre alta ou cansaço para respirar, reavalie." },
   { q: "Posso usar soro fisiológico no nariz?", tag: "casa", src: ["sbp"], a: "Sim. Soro fisiológico 0,9% ajuda a soltar a secreção e a hidratar o nariz e pode ser usado várias vezes ao dia." },
@@ -711,7 +711,7 @@ function stepsBar() {
   return `<div class="row between" style="margin-bottom:8px"><button class="link" data-act="prev">${icon("back", "sm")} Voltar</button><span class="stepnum">Passo ${Math.min(i + 1, st.length)} de ${st.length}</span></div>
   <div class="steps" aria-hidden="true">${st.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("")}</div>`;
 }
-const emergencyNote = () => `<div class="notice r emerg">${icon("alert")}<div><b>Lábios roxos, pausa na respiração, convulsão ou não acorda?</b> Não grave.<a class="btn red" href="tel:192">${icon("phone", "sm")} Ligar 192 agora</a></div></div>`;
+const emergencyNote = () => `<div class="notice r emerg">${icon("alert")}<div><b>Lábios roxos, pausa na respiração, convulsão ou não reage?</b> Não grave.<a class="btn red" href="tel:192">${icon("phone", "sm")} Ligar 192 agora</a></div></div>`;
 const disclaimer = () => `<p class="disclaimer">Esta plataforma é um assistente de orientação e triagem. Ela não substitui a avaliação presencial de um médico pediatra.</p>`;
 function faces(path, cur, kind) {
   const L = kind === "seg" ? [["😟", "Nada"], ["😕", "Pouco"], ["😐", "Mais ou menos"], ["🙂", "Seguro(a)"], ["😌", "Muito"]] : [["😌", "Tranquilo(a)"], ["🙂", "Um pouco"], ["😟", "Preocupado(a)"], ["😰", "Muito"], ["😱", "Assustado(a)"]];
@@ -942,7 +942,7 @@ function vFlowSintomas() {
     <div class="sec-title">${icon("lung")}<h3 style="margin:0">Esforço para respirar</h3></div>
     <p class="small muted" style="margin:-4px 0 8px">Olhe com calma, com a criança quieta. Só marque se tiver certeza.</p>
     <div class="sgrid">${RED.filter(s => s.grp === "esforco").map(s => symTile(s, true)).join("")}</div>
-    ${F.red.length && F.mode !== "anterior" ? `<div class="notice r" style="margin-top:12px">${icon("alert")}<div><b>Você marcou um sinal de alerta.</b> Procure atendimento agora. Lábios roxos, pausas, convulsão ou difícil de acordar: <a href="tel:192"><b>ligue 192</b></a>.</div></div>` : ""}
+    ${F.red.length && F.mode !== "anterior" ? `<div class="notice r" style="margin-top:12px">${icon("alert")}<div><b>Você marcou um sinal de alerta.</b> Procure atendimento agora. Lábios roxos, pausas, convulsão ou não reage: <a href="tel:192"><b>ligue 192</b></a>.</div></div>` : ""}
     <div class="sec-title">${icon("heart")}<h3 style="margin:0">Outros sintomas</h3></div>
     <div class="sgrid">${COMMON.map(s => symTile(s, false)).join("")}</div>
     ${F.sym.includes("febre") ? `<label class="f">Há quantos dias tem febre?</label>${chips("flow.feverDays", [["1", "1 dia"], ["2", "2 dias"], ["3", "3 dias ou mais"]], F.feverDays)}` : ""}
@@ -1225,7 +1225,7 @@ async function ask(q) {
   q = (q || "").trim(); if (!q) return;
   S.chat.push({ r: "u", c: q, t: Date.now() }); log("pergunta_assistente", q.slice(0, 60));
   const urgent = URGENT_RE.test(norm(q));
-  if (urgent) S.chat.push({ r: "b", c: "Isso pode ser um sinal de alerta. Se a criança está com lábios roxos, pausas na respiração, convulsão, costelas afundando ou muito difícil de acordar, ligue 192 agora ou vá ao pronto-atendimento.", t: Date.now() });
+  if (urgent) S.chat.push({ r: "b", c: "Isso pode ser um sinal de alerta. Se a criança está com lábios roxos, pausas na respiração, convulsão, costelas afundando ou não reage quando você chama e toca, ligue 192 agora ou vá ao pronto-atendimento.", t: Date.now() });
   save(); render();
   const chat = $("#chat"); const el = document.createElement("div"); el.className = "msg bot"; el.textContent = "Pensando…"; chat.appendChild(el); el.scrollIntoView({ block: "end" });
   let answer = "";
