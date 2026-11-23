@@ -18,6 +18,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings/teams'
 import { Route as AuthenticatedSettingsOrgRouteImport } from './routes/_authenticated/settings/org'
 import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_authenticated/settings/members'
+import { Route as AuthenticatedDevTodosRouteImport } from './routes/_authenticated/dev/todos'
 import { Route as AuthenticatedDevTenantsRouteImport } from './routes/_authenticated/dev/tenants'
 import { Route as AuthenticatedDevRichtextCollabRouteImport } from './routes/_authenticated/dev/richtext-collab'
 import { Route as AuthenticatedDevPermissionsRouteImport } from './routes/_authenticated/dev/permissions'
@@ -70,6 +71,11 @@ const AuthenticatedSettingsMembersRoute =
     path: '/settings/members',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDevTodosRoute = AuthenticatedDevTodosRouteImport.update({
+  id: '/dev/todos',
+  path: '/dev/todos',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDevTenantsRoute = AuthenticatedDevTenantsRouteImport.update({
   id: '/dev/tenants',
   path: '/dev/tenants',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/dev/permissions': typeof AuthenticatedDevPermissionsRoute
   '/dev/richtext-collab': typeof AuthenticatedDevRichtextCollabRoute
   '/dev/tenants': typeof AuthenticatedDevTenantsRoute
+  '/dev/todos': typeof AuthenticatedDevTodosRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/org': typeof AuthenticatedSettingsOrgRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/dev/permissions': typeof AuthenticatedDevPermissionsRoute
   '/dev/richtext-collab': typeof AuthenticatedDevRichtextCollabRoute
   '/dev/tenants': typeof AuthenticatedDevTenantsRoute
+  '/dev/todos': typeof AuthenticatedDevTodosRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/org': typeof AuthenticatedSettingsOrgRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/dev/permissions': typeof AuthenticatedDevPermissionsRoute
   '/_authenticated/dev/richtext-collab': typeof AuthenticatedDevRichtextCollabRoute
   '/_authenticated/dev/tenants': typeof AuthenticatedDevTenantsRoute
+  '/_authenticated/dev/todos': typeof AuthenticatedDevTodosRoute
   '/_authenticated/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/_authenticated/settings/org': typeof AuthenticatedSettingsOrgRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/dev/permissions'
     | '/dev/richtext-collab'
     | '/dev/tenants'
+    | '/dev/todos'
     | '/settings/members'
     | '/settings/org'
     | '/settings/teams'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/dev/permissions'
     | '/dev/richtext-collab'
     | '/dev/tenants'
+    | '/dev/todos'
     | '/settings/members'
     | '/settings/org'
     | '/settings/teams'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dev/permissions'
     | '/_authenticated/dev/richtext-collab'
     | '/_authenticated/dev/tenants'
+    | '/_authenticated/dev/todos'
     | '/_authenticated/settings/members'
     | '/_authenticated/settings/org'
     | '/_authenticated/settings/teams'
@@ -255,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMembersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dev/todos': {
+      id: '/_authenticated/dev/todos'
+      path: '/dev/todos'
+      fullPath: '/dev/todos'
+      preLoaderRoute: typeof AuthenticatedDevTodosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dev/tenants': {
       id: '/_authenticated/dev/tenants'
       path: '/dev/tenants'
@@ -293,6 +312,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDevPermissionsRoute: typeof AuthenticatedDevPermissionsRoute
   AuthenticatedDevRichtextCollabRoute: typeof AuthenticatedDevRichtextCollabRoute
   AuthenticatedDevTenantsRoute: typeof AuthenticatedDevTenantsRoute
+  AuthenticatedDevTodosRoute: typeof AuthenticatedDevTodosRoute
   AuthenticatedSettingsMembersRoute: typeof AuthenticatedSettingsMembersRoute
   AuthenticatedSettingsOrgRoute: typeof AuthenticatedSettingsOrgRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
@@ -305,6 +325,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDevPermissionsRoute: AuthenticatedDevPermissionsRoute,
   AuthenticatedDevRichtextCollabRoute: AuthenticatedDevRichtextCollabRoute,
   AuthenticatedDevTenantsRoute: AuthenticatedDevTenantsRoute,
+  AuthenticatedDevTodosRoute: AuthenticatedDevTodosRoute,
   AuthenticatedSettingsMembersRoute: AuthenticatedSettingsMembersRoute,
   AuthenticatedSettingsOrgRoute: AuthenticatedSettingsOrgRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,

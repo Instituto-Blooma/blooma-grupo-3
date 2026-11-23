@@ -57,6 +57,21 @@ const schema = defineSchema({
   })
     .index('by_documentId', ['documentId'])
     .index('by_org_and_document', ['organizationId', 'documentId']),
+
+  /**
+   * RespiraKids: documentos do app (famílias, registros, áudios, validações, retornos),
+   * guardados por caminho, como no banco do artefato original. Ex.:
+   * "familias/<userId>", "familias/<userId>/registros/<id>", "validacoes/<id>", "retornos/<userId>".
+   */
+  respiraDocs: defineTable({
+    path: v.string(),
+    collection: v.string(),
+    data: v.any(),
+    updatedAt: v.number(),
+    updatedBy: v.id('users'),
+  })
+    .index('by_path', ['path'])
+    .index('by_collection', ['collection']),
 });
 
 export default schema;

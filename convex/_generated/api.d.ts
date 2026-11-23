@@ -31,6 +31,7 @@ import type * as lib_testLoginProvider from "../lib/testLoginProvider.js";
 import type * as lib_users from "../lib/users.js";
 import type * as onboarding from "../onboarding.js";
 import type * as platform from "../platform.js";
+import type * as respira from "../respira.js";
 import type * as tenants from "../tenants.js";
 import type * as testing_e2e from "../testing/e2e.js";
 import type * as todos from "../todos.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   "lib/users": typeof lib_users;
   onboarding: typeof onboarding;
   platform: typeof platform;
+  respira: typeof respira;
   tenants: typeof tenants;
   "testing/e2e": typeof testing_e2e;
   todos: typeof todos;

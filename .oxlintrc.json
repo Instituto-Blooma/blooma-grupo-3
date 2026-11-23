@@ -50,6 +50,7 @@
     "convex/_generated/**",
     "app/routeTree.gen.ts",
     "client/src/routeTree.gen.ts",
+    "client/src/respira/legacy/**",
     "*.min.js",
     "*.bundle.js"
   ],

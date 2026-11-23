@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Dashboard } from '@/components/dashboard';
+import { RespiraKidsPage } from '@/respira/RespiraKidsPage';
 
 export const Route = createFileRoute('/_authenticated/')({
-  component: Dashboard,
+  component: RespiraKidsPage,
 });
