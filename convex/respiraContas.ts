@@ -236,6 +236,30 @@ export const painel = query({
   },
 });
 
+/** Quem mandou o convite (para mostrar o nome antes de aceitar). Só para quem está logado. */
+export const infoCodigo = query({
+  args: { code: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await resolveActingUserId(ctx);
+    if (!userId) return null;
+    const code = normalizeCode(args.code);
+    if (code.length !== 6) return null;
+    const found = await ctx.db
+      .query('respiraCodes')
+      .withIndex('by_code', (q) => q.eq('code', code))
+      .order('desc')
+      .first();
+    if (!found) return null;
+    return {
+      creatorRole: found.creatorRole,
+      nome: await displayName(ctx, found.createdBy),
+      status: found.status,
+      expiresAt: found.expiresAt,
+      souEu: found.createdBy === userId,
+    };
+  },
+});
+
 /* ---------------------------------------------------------------- perfil */
 
 export const salvarPerfil = mutation({

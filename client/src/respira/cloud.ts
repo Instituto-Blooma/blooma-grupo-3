@@ -133,6 +133,7 @@ export function createRespiraRuntime(
       onError?: (e: { code: string }) => void
     ) => watch(api.respiraContas.painel, {}, cb, onError),
     sair: () => options.signOut(),
+    info: (code: string) => run(client.query(api.respiraContas.infoCodigo, { code })),
     call: (name: keyof typeof contasMutations, args: Record<string, unknown> = {}) => {
       const fn = contasMutations[name];
       if (!fn)

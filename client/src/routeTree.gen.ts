@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as VincularCodeRouteImport } from './routes/vincular.$code'
 import { Route as DevInboxRouteImport } from './routes/dev/inbox'
 import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -37,6 +38,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const VincularCodeRoute = VincularCodeRouteImport.update({
+  id: '/vincular/$code',
+  path: '/vincular/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DevInboxRoute = DevInboxRouteImport.update({
   id: '/dev/inbox',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/dev/inbox': typeof DevInboxRoute
+  '/vincular/$code': typeof VincularCodeRoute
   '/dev/form': typeof AuthenticatedDevFormRoute
   '/dev/permissions': typeof AuthenticatedDevPermissionsRoute
   '/dev/richtext-collab': typeof AuthenticatedDevRichtextCollabRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/dev/inbox': typeof DevInboxRoute
+  '/vincular/$code': typeof VincularCodeRoute
   '/': typeof AuthenticatedIndexRoute
   '/dev/form': typeof AuthenticatedDevFormRoute
   '/dev/permissions': typeof AuthenticatedDevPermissionsRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/dev/inbox': typeof DevInboxRoute
+  '/vincular/$code': typeof VincularCodeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/dev/form': typeof AuthenticatedDevFormRoute
   '/_authenticated/dev/permissions': typeof AuthenticatedDevPermissionsRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/accept-invitation/$id'
     | '/dev/inbox'
+    | '/vincular/$code'
     | '/dev/form'
     | '/dev/permissions'
     | '/dev/richtext-collab'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/accept-invitation/$id'
     | '/dev/inbox'
+    | '/vincular/$code'
     | '/'
     | '/dev/form'
     | '/dev/permissions'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/accept-invitation/$id'
     | '/dev/inbox'
+    | '/vincular/$code'
     | '/_authenticated/'
     | '/_authenticated/dev/form'
     | '/_authenticated/dev/permissions'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
   DevInboxRoute: typeof DevInboxRoute
+  VincularCodeRoute: typeof VincularCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -224,6 +237,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/vincular/$code': {
+      id: '/vincular/$code'
+      path: '/vincular/$code'
+      fullPath: '/vincular/$code'
+      preLoaderRoute: typeof VincularCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/dev/inbox': {
       id: '/dev/inbox'
@@ -340,6 +360,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   AcceptInvitationIdRoute: AcceptInvitationIdRoute,
   DevInboxRoute: DevInboxRoute,
+  VincularCodeRoute: VincularCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

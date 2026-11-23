@@ -3,6 +3,8 @@
 // RespiraKids — código original do artefato, mantido como estava.
 // Mudanças: roda dentro de startRespira() para poder ligar/desligar com a página,
 // e window.claude (banco/usuário) é fornecido pelo app via Convex (ver ../cloud.ts).
+// Depois foram acrescentadas contas (família/médico/hospital), convites por link e QR code.
+import QRCode from "qrcode";
 
 export const MARKUP = "<header class=\"topbar\">\n  <img src=\"/respirakids-logo.png\" alt=\"\">\n  <span class=\"brand\">RespiraKids</span>\n  <button type=\"button\" class=\"child\" id=\"childChip\" data-go=\"criancas\" hidden></button>\n</header>\n<main id=\"app\" tabindex=\"-1\"></main>\n<nav class=\"tabbar\" id=\"tabbar\" aria-label=\"Navegação principal\"></nav>\n<div class=\"toast\" id=\"toast\" role=\"status\" aria-live=\"polite\"></div>\n<input type=\"file\" id=\"fileIn\" accept=\"audio/*\" hidden>";
 
@@ -224,7 +226,7 @@ function actionsFor(level, airIssue, profile) {
   ];
   if (level === 1) return [
     "Reavalie em 2 horas: grave de novo ou conte as respirações por 1 minuto com ela calma.",
-    "Fale hoje com o pediatra ou com um serviço de telemedicina. Você pode enviar este relatório pelo WhatsApp.",
+    "Fale hoje com o pediatra ou com um serviço de telemedicina. Se ele estiver vinculado no app, já vê este registro.",
     cond.includes("asma") ? "Siga o plano de ação para asma que o pediatra deixou por escrito." : "Mantenha a criança descansando, sentada ou recostada, e ofereça água aos pouquinhos.",
     "Se aparecer algum sinal de alerta (costelas afundando, lábios roxos, muito sonolenta), procure atendimento na hora."
   ];
@@ -706,7 +708,7 @@ function vTermos() {
     <h3>Por que usamos (LGPD)</h3>
     <p>Dados de saúde são dados sensíveis (Lei 13.709/2018, art. 11), e dados de crianças só podem ser tratados com o consentimento de pai, mãe ou responsável legal (art. 14). Usamos os dados para: gerar a orientação; montar o histórico da criança; enviar ao médico quando você escolher; e, sem identificação e só se você permitir, avaliar e melhorar o aplicativo com especialistas.</p>
     <h3>Onde os dados ficam</h3>
-    <p>Os dados ficam guardados neste aparelho. <b>Se você autorizar abaixo</b>, eles também são guardados no banco de dados do RespiraKids, ligado à sua conta, para não se perderem e para que os <b>profissionais de saúde autorizados pelo projeto</b> possam analisar os registros e enviar devolutivas. Nenhuma outra família vê os seus dados. Os áudios vão para o banco em qualidade reduzida. Ao enviar pelo WhatsApp, os dados passam a seguir as regras do WhatsApp e de quem recebe. As perguntas feitas ao assistente de dúvidas são enviadas ao Claude (Anthropic) para gerar a resposta, junto com a idade e as condições da criança, sem o nome.</p>
+    <p>Os dados ficam guardados neste aparelho. <b>Se você autorizar abaixo</b>, eles também são guardados no banco de dados do RespiraKids, ligado à sua conta, para não se perderem e para que os <b>médicos que você vincular no app</b> possam analisar os registros e enviar devolutivas. Você escolhe quem vincular e pode remover a qualquer momento. A equipe técnica do projeto também tem acesso para manter o serviço funcionando. Nenhuma outra família vê os seus dados. Os áudios vão para o banco em qualidade reduzida. Se você mandar o relatório pelo WhatsApp, ele passa a seguir as regras do WhatsApp.</p>
     <h3>Seus direitos</h3>
     <p>Você pode ver, corrigir, exportar e apagar todos os dados a qualquer momento em <b>Mais › Privacidade</b>, e pode retirar este consentimento quando quiser.</p>
     <h3>Isenção de responsabilidade médica</h3>
@@ -746,7 +748,7 @@ function vInicio() {
   ${last ? `<p class="small muted" style="margin:0 0 6px">Último registro · ${fmtDate(last.t)}${wk > 1 ? ` · ${wk} nos últimos 7 dias` : ""}</p>${tlItem(last)}` : ""}
   ${dry ? `<details class="card flat" style="padding:12px 14px;margin-top:8px"><summary class="row" style="cursor:pointer;list-style:none">${icon("sun")}<b>Dica: tempo seco e fumaça</b></summary><p class="small" style="margin:8px 0 0">Água em pequenos goles, soro no nariz e janelas fechadas nas horas de fumaça ajudam.</p></details>` : ""}
   <div class="grid2" style="margin-top:14px">
-    <button class="btn ghost" data-go="enviar">${icon("send", "sm")} Enviar ao médico</button>
+    <button class="btn ghost" data-go="enviar">${icon("download", "sm")} Relatório</button>
     <button class="btn ghost" data-go="conversa">${icon("chat", "sm")} Tirar dúvida</button>
   </div>`;
 }
@@ -770,11 +772,10 @@ function vCadastro() {
     <label class="f" for="pf_pedNotes">Orientações que o pediatra deixou</label><textarea class="f" id="pf_pedNotes" data-in="prof.pedNotes" placeholder="Ex.: plano de ação para crise de asma">${esc(PF.pedNotes)}</textarea>
   </div>
   <div class="card">
-    <h3>Contatos para enviar relatórios</h3>
+    <h3>Outros dados (opcional)</h3>
     ${inp("pedNome", "Nome do pediatra (opcional)")}
-    ${inp("pedNum", "WhatsApp do pediatra (com DDD)", "tel", "(61) 99999-9999", 'inputmode="tel"')}
-    ${inp("emNum", "WhatsApp de um contato de confiança (opcional)", "tel", "(61) 99999-9999", 'inputmode="tel"')}
     ${inp("cidade", "Cidade e bairro (opcional)", "text", "Ex.: Brasília, Asa Norte")}
+    <p class="small muted" style="margin:8px 0 0">Para o pediatra acompanhar, convide-o em Mais → Meus médicos.</p>
   </div>
   <button class="btn block" data-act="saveProfile">${fromRec ? "Salvar e continuar" : PF._new ? "Adicionar criança" : "Salvar perfil"}</button>`;
 }
@@ -933,7 +934,7 @@ function vResultado() {
     ${rec.level === 1 && S.pending && S.pending.id === rec.id ? `<div class="notice y">${icon("timer")}<div><b>Reavalie às ${fmtTime(S.pending.t)}.</b> Vamos lembrar você na tela inicial.</div></div>` : ""}
     ${rb.html}
     <div class="stack" style="margin-bottom:14px">
-      <button class="btn wa block" data-act="sendRec" data-id="${rec.id}">${icon("send", "sm")} Enviar ao médico</button>
+      <button class="btn block" data-act="sendRec" data-id="${rec.id}">${icon("download", "sm")} Salvar relatório</button>
       <div class="grid2"><button class="btn ghost" data-act="home">Início</button><button class="btn ghost" data-go="conversa">${icon("chat", "sm")} Tirar dúvida</button></div>
     </div>
     ${rec.retro ? "" : `<div class="card flat"><h3 style="margin-bottom:10px">Você se sente seguro(a) com essa decisão?</h3>${faces("", F.secure, "seg")}
@@ -1052,7 +1053,7 @@ function vHistorico() {
   ${list.length > shown.length ? `<button class="btn ghost block" data-act="more">Mostrar mais ${Math.min(40, list.length - shown.length)}</button>` : ""}
   <div class="card" style="margin-top:16px"><div class="row">${icon("chat", "lg")}<div><h3 style="margin:0">Dúvida sobre o histórico?</h3><p class="small muted" style="margin:0">O assistente lê os últimos registros e explica de forma simples.</p></div></div>
     <div class="hr"></div><button class="btn ghost block" data-act="askHistory">Perguntar ao assistente</button></div>
-  <button class="btn wa block" data-go="enviar">${icon("send", "sm")} Enviar histórico ao médico</button>`;
+  <button class="btn block" data-go="enviar">${icon("download", "sm")} Relatório do histórico</button>`;
 }
 
 function vRegistro() {
@@ -1083,7 +1084,7 @@ function vRegistro() {
     <button class="btn block" style="margin-top:12px" data-act="saveFU">Salvar resposta</button>`}
   </div>
   ${disclaimer()}
-  <div class="stack"><button class="btn wa block" data-act="sendRec" data-id="${r.id}">${icon("send", "sm")} Enviar este registro ao médico</button>
+  <div class="stack"><button class="btn block" data-act="sendRec" data-id="${r.id}">${icon("download", "sm")} Salvar este registro</button>
   <button class="btn ghost block" data-act="delRec" data-id="${r.id}">${icon("trash", "sm")} Apagar registro</button></div>`;
 }
 /* ========== dúvidas (FAQ) ========== */
@@ -1177,7 +1178,50 @@ async function ask(q) {
   S.chat.push({ r: "b", c: answer, t: Date.now() }); if (S.chat.length > 80) S.chat.splice(0, S.chat.length - 80); save();
 }
 
-/* ========== enviar ao médico (WhatsApp) ========== */
+/* ========== relatório em arquivo (família e médico) ========== */
+/* Gera uma página HTML que abre em qualquer navegador e pode ser impressa ou salva em PDF. */
+function reportHTML({ kid, recs, retornos, valOfRec, quem, periodo }) {
+  const k = kid || {}, list = recs.slice().sort((a, b) => b.t - a.t);
+  const lvColor = ["#25734B", "#8A5A00", "#AD2A1F"];
+  const symList = r => [...(r.red || []), ...(r.sym || [])].map(x => SYM_ALL[x] ? SYM_ALL[x].t.toLowerCase() : x).join(", ") || "–";
+  const envTxt = r => r.env ? [r.env.umid === "seca" ? "ar seco" : "", r.env.fumaca === "sim" ? "fumaça" : "", r.env.cidade || ""].filter(Boolean).join(", ") || "–" : "–";
+  const prof = r => {
+    const rt = retornos && retornos[r.id], v = valOfRec ? valOfRec(r) : null;
+    const parts = [];
+    if (v && v.esp !== undefined && LEVELS[v.esp]) parts.push(`Classificação: ${LEVELS[v.esp].name}`);
+    const nota = (rt && rt.nota) || (v && v.nota);
+    if (nota) parts.push(esc(nota));
+    return parts.join("<br>") || "–";
+  };
+  const rows = list.map(r => `<tr><td>${fmtDate(r.t)} ${fmtTime(r.t)}${r.retro ? "<br><small>adicionado depois</small>" : ""}</td>
+    <td><b style="color:${lvColor[r.level]}">${LEVELS[r.level].name}</b></td>
+    <td>${r.rr && r.rr.value ? `${r.rr.value}/min<br><small>${r.rr.source === "manual" ? "contada" : "pelo áudio"}</small>` : "–"}</td>
+    <td>${symList(r)}${r.feverDays ? `<br><small>febre há ${esc(r.feverDays)} dia(s)</small>` : ""}</td>
+    <td>${envTxt(r)}</td><td>${r.hasAudio ? "sim" : "–"}</td><td>${prof(r)}</td></tr>`).join("");
+  const count = n => list.filter(r => r.level === n).length;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RespiraKids – ${esc(k.nome || "relatório")}</title>
+<style>body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#173A39;margin:24px auto;max-width:960px;padding:0 16px}
+h1{font-size:22px;margin:0 0 4px;color:#2E6A68}h2{font-size:17px;margin:22px 0 8px}.muted{color:#4B6765}
+.box{border:1px solid #CFE0DE;border-radius:12px;padding:12px 14px;margin:12px 0}.kp{display:flex;gap:10px;flex-wrap:wrap}
+.kp div{border:1px solid #CFE0DE;border-radius:10px;padding:8px 12px}table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid #CFE0DE;padding:7px 8px;text-align:left;vertical-align:top}th{background:#EEF5F4}small{color:#4B6765}
+.note{font-size:12.5px;color:#4B6765;margin-top:18px}@media print{body{margin:0}.noprint{display:none}}</style></head><body>
+<p class="noprint muted" style="text-align:right"><button onclick="print()">Imprimir ou salvar em PDF</button></p>
+<h1>RespiraKids · Relatório respiratório</h1>
+<p class="muted">Gerado em ${fmtDay(Date.now())}, ${fmtTime(Date.now())}${quem ? ` por ${esc(quem)}` : ""} · Período: ${esc(periodo || "todos os registros")}</p>
+<div class="box"><b>${esc(k.nome || "Criança")}</b>${k.age !== undefined && k.age !== "" ? `, ${ageLabel(k.age)}` : ""}<br>
+Diagnósticos: ${esc((k.cond || []).filter(c => c !== "nenhum").join(", ") || "nenhum informado")}<br>
+Remédios contínuos: ${esc(k.meds || "nenhum informado")}${k.pedNotes ? `<br>Orientações do pediatra: ${esc(k.pedNotes)}` : ""}</div>
+<div class="kp"><div><b>${list.length}</b> registros</div><div style="color:${lvColor[2]}"><b>${count(2)}</b> vermelhos</div><div style="color:${lvColor[1]}"><b>${count(1)}</b> amarelos</div><div style="color:${lvColor[0]}"><b>${count(0)}</b> verdes</div></div>
+<h2>Registros</h2>
+${list.length ? `<table><thead><tr><th>Data</th><th>Nível do app</th><th>Respirações</th><th>Sintomas</th><th>Ambiente</th><th>Áudio</th><th>Profissional</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="muted">Sem registros no período.</p>`}
+<p class="note">Os áudios ficam no app RespiraKids. A orientação do app é triagem, não diagnóstico, e não substitui a avaliação de um médico.</p>
+</body></html>`;
+}
+const fileSafe = s => String(s || "crianca").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").slice(0, 40);
+
+/* ========== relatório da família ========== */
 function waNumber(n) { let d = String(n || "").replace(/\D/g, ""); if (d.length >= 10 && d.length <= 11) d = "55" + d; return d; }
 const LV_EMOJI = ["🟢", "🟡", "🔴"];
 function reportRecords() {
@@ -1200,33 +1244,34 @@ Período: ${range} (${recs.length} registro${recs.length === 1 ? "" : "s"})
 ${lines.join("\n") || "Sem registros no período."}
 ${recs.length > 15 ? `\n(+${recs.length - 15} registros anteriores no app)` : ""}
 ${lastA ? `\nÁudio mais recente: ${fmtDate(lastA.t)} ${fmtTime(lastA.t)}, ${Math.round(lastA.audio.durRaw)} s (enviado à parte).` : ""}
-Enviado por ${p.resp || "responsável"}. A orientação do app é triagem, não diagnóstico.`;
+Registrado por ${p.resp || "responsável"}. A orientação do app é triagem, não diagnóstico.`;
 }
 function vEnviar() {
   const p = S.profile || {};
-  if (!SD._init) { SD.to = p.pedNum ? "pediatra" : p.emNum ? "emergencia" : "outro"; SD.num = p.pedNum || p.emNum || ""; SD._init = true; }
   if (SEL && SD._fromRec) SD.range = "um";
-  const n = waNumber(SD.num);
-  const href = `https://wa.me/${n}?text=${encodeURIComponent(reportText())}`;
+  if (!["um", "ultimo", "7", "30"].includes(SD.range)) SD.range = "7";
   const recs = reportRecords(); const hasA = recs.some(r => r.hasAudio);
+  const wa = `https://wa.me/?text=${encodeURIComponent(reportText())}`;
+  const meds = CT.p && CT.p.medicos ? CT.p.medicos : [];
   return `<button class="link" data-act="back">${icon("back", "sm")} Voltar</button>
-  <h1>Enviar para o médico</h1>
-  <p class="muted">Monte um resumo do histórico e envie pelo WhatsApp para o pediatra ou para um contato de confiança.</p>
+  <h1>Relatório</h1>
+  <p class="muted">Guarde um resumo dos registros de ${esc(p.nome || "sua criança")}.</p>
   <div class="card">
-    <label class="f" style="margin-top:0">Para quem?</label>
-    ${chips("send.to", [["pediatra", "Pediatra"], ["emergencia", "Contato de confiança"], ["outro", "Outro número"]], SD.to, false, true)}
-    <label class="f" for="sdNum">Número do WhatsApp (com DDD)</label>
-    <input class="f" id="sdNum" type="tel" inputmode="tel" data-in="send.num" value="${esc(SD.num)}" placeholder="(61) 99999-9999">
-    <label class="f">O que enviar?</label>
+    <label class="f" style="margin-top:0">Período</label>
     ${chips("send.range", (SEL && SD._fromRec ? [["um", "Este registro"]] : []).concat([["ultimo", "Último registro"], ["7", "Últimos 7 dias"], ["30", "Últimos 30 dias"]]), SD.range, false, true)}
+    <p class="small muted" style="margin:10px 0 0">${recs.length} registro${recs.length === 1 ? "" : "s"} no período.</p>
   </div>
-  <div class="card"><h3>Prévia da mensagem</h3><pre class="small" style="white-space:pre-wrap;font-family:var(--sans);margin:0" id="preview">${esc(reportText())}</pre></div>
   <div class="stack">
-    <a class="btn wa block" id="waLink" href="${n.length >= 12 ? href : "#"}" target="_blank" rel="noopener" data-act="waOpen" ${n.length >= 12 ? "" : 'aria-disabled="true"'}>${icon("send", "sm")} Abrir WhatsApp com o relatório</a>
-    ${hasA ? `<button class="btn ghost block" data-act="shareFiles">${icon("upload", "sm")} Compartilhar áudio e relatório</button>
-    <button class="btn ghost block" data-act="saveZip">${icon("download", "sm")} Salvar pacote com áudio (.zip)</button>` : `<p class="small muted">Nenhum áudio no período escolhido. Só o texto será enviado.</p>`}
+    <button class="btn block" data-act="saveReport">${icon("download", "sm")} Baixar relatório</button>
+    <a class="btn wa block" href="${wa}" target="_blank" rel="noopener" data-act="waSelf">${icon("send", "sm")} Mandar para mim no WhatsApp</a>
+    ${hasA ? `<button class="btn ghost block" data-act="saveZip">${icon("download", "sm")} Baixar as gravações (.zip)</button>` : ""}
   </div>
-  ${hasA ? `<div class="card" style="margin-top:14px"><h3>Como mandar o áudio</h3><ol class="acts small"><li>Toque em “Abrir WhatsApp com o relatório” e envie o texto.</li><li>Volte e toque em “Compartilhar áudio e relatório”, escolha o WhatsApp e a mesma conversa.</li><li>Se o compartilhar não abrir, salve o pacote .zip e anexe no WhatsApp pelo clipe › Documento.</li></ol></div>` : ""}`;
+  <p class="small muted">No WhatsApp, escolha a conversa com você mesmo(a) para guardar.</p>
+  <div class="card" style="margin-top:14px"><h3>${icon("cross", "sm")} E o médico?</h3>
+    ${meds.length ? `<p style="margin:0 0 10px">${meds.map(m => `<b>${esc(m.nome)}</b>`).join(", ")} já ${meds.length > 1 ? "veem" : "vê"} tudo pelo app, inclusive as gravações, e ${meds.length > 1 ? "podem" : "pode"} baixar o relatório.</p>`
+      : `<p style="margin:0 0 10px">Convide o médico pelo app: ele vê o histórico, ouve as gravações e baixa o relatório. Você manda só o convite.</p>`}
+    <button class="btn ghost block" data-go="medicos">${meds.length ? "Meus médicos" : "Convidar meu médico"}</button>
+  </div>`;
 }
 async function audioFilesFor(recs) {
   const out = [];
@@ -1247,7 +1292,7 @@ function vMais() {
     <div class="hr"></div><button class="btn ghost block" data-act="addKid">${icon("plus", "sm")} Adicionar outra criança</button></div>
   <div class="card stack">
     <button class="btn ghost block" data-go="medicos">${icon("cross", "sm")} Meus médicos${ctPendentes() ? ` <span class="demo">${ctPendentes()} novo${ctPendentes() > 1 ? "s" : ""}</span>` : ""}</button>
-    <button class="btn ghost block" data-go="enviar">${icon("send", "sm")} Enviar relatório ao médico</button>
+    <button class="btn ghost block" data-go="enviar">${icon("download", "sm")} Relatório</button>
     <button class="btn ghost block" data-go="sintomas">${icon("heart", "sm")} Guia de sintomas</button>
     <button class="btn ghost block" data-go="conta">${icon("user", "sm")} Minha conta</button>
     ${CLOUD.admin ? `<a class="btn ghost block" href="#medico">${icon("cross", "sm")} App clínico</a>` : ""}
@@ -1470,8 +1515,9 @@ function medCriancas() {
       <div class="card"><h2>${esc(kid.nome)}, ${ageLabel(kid.age)}</h2>
         <p class="small" style="margin:0 0 4px">Diagnósticos: ${(kid.cond || []).filter(c => c !== "nenhum").join(", ") || "nenhum informado"} · Remédios contínuos: ${esc(kid.meds || "nenhum")}</p>
         ${kid.pedNotes ? `<p class="small" style="margin:0 0 4px">Orientações do pediatra: ${esc(kid.pedNotes)}</p>` : ""}
-        <p class="small muted" style="margin:0">${kid.demo ? "Criança fictícia de exemplo" : `Responsável: ${esc(kid.resp || "–")}${kid.rel ? " (" + ({ mae: "mãe", pai: "pai", avo: "avó/avô", baba: "babá", outro: "outro" }[kid.rel]) + ")" : ""} · conta <span data-uid="${kid.account}">–</span>${kid.cidade ? " · " + esc(kid.cidade) : ""}${kid.pedNum ? ` · <a href="https://wa.me/${waNumber(kid.pedNum)}" target="_blank" rel="noopener">WhatsApp do pediatra</a>` : ""}`}</p>
-        <p class="small muted" style="margin:6px 0 0">Preocupação média antes: ${avg(krecs.map(r => r.anxBefore).filter(Boolean))}/5 · segurança depois: ${avg(krecs.map(r => r.secureAfter).filter(Boolean))}/5 · ${krecs.length} registros</p></div>
+        <p class="small muted" style="margin:0">${kid.demo ? "Criança fictícia de exemplo" : `Responsável: ${esc(kid.resp || "–")}${kid.rel ? " (" + ({ mae: "mãe", pai: "pai", avo: "avó/avô", baba: "babá", outro: "outro" }[kid.rel]) + ")" : ""} · conta <span data-uid="${kid.account}">–</span>${kid.cidade ? " · " + esc(kid.cidade) : ""}`}</p>
+        <p class="small muted" style="margin:6px 0 0">Preocupação média antes: ${avg(krecs.map(r => r.anxBefore).filter(Boolean))}/5 · segurança depois: ${avg(krecs.map(r => r.secureAfter).filter(Boolean))}/5 · ${krecs.length} registros</p>
+        ${kid.demo ? "" : `<button class="btn ghost" style="margin-top:12px" data-act="medReport" data-id="${kid.id}">${icon("download", "sm")} Baixar relatório</button>`}</div>
       ${MED.rec ? medRecPanel(kid, krecs.find(r => r.id === MED.rec)) : ""}
       <div class="card"><h3>Respirações por minuto</h3>${rrChart(krecs.slice().reverse(), Number(kid.age))}</div>
       <div class="tablewrap"><table><thead><tr><th>Data</th><th>App</th><th>FR</th><th>Sintomas</th><th>Ar</th><th>Áudio</th><th>Especialista</th></tr></thead><tbody>
@@ -1551,6 +1597,12 @@ const MED_ACT = {
   medFam(el) { MED.fam = el.dataset.id; MED.rec = null; render(); },
   medOpen(el) { MED.fam = el.dataset.fam; MED.rec = el.dataset.id; MED.tab = "criancas"; render(); window.scrollTo(0, 0); },
   medClose() { MED.rec = null; render(); },
+  medReport(el) {
+    const { kids, recs } = medData(); const kid = kids.find(k => k.id === el.dataset.id); if (!kid) return;
+    const krecs = recs.filter(r => r.kid === kid.id);
+    const html = reportHTML({ kid, recs: krecs, valOfRec: valOf, quem: (CT.p && CT.p.me.nome) || "profissional", periodo: "todos os registros compartilhados" });
+    saveFile(`RespiraKids_${fileSafe(kid.nome)}_${new Date().toISOString().slice(0, 10)}.html`, new Blob([html], { type: "text/html" }));
+  },
   medDev(el) { MED.form.devolver = el.checked; },
   async medPlay(el) { const a = $("#medAudio"); el.disabled = true; try { const b = await cloudAudioBlob(el.dataset.fam, el.dataset.id); if (!b) { toast("Áudio ainda não chegou ao banco."); return; } a.src = URL.createObjectURL(b); a.hidden = false; a.play().catch(() => { }); } catch (e) { toast("Não foi possível baixar o áudio agora."); } finally { el.disabled = false; } },
   async medSave(el) {
@@ -1703,6 +1755,14 @@ const ACT = {
   },
   secure(el) { F.secure = Number(el.dataset.v); const r = S.records.find(x => x.id === F.recId); if (r) r.secureAfter = F.secure; save(); log("seguranca_pos", F.secure); render(); },
   sendRec(el) { SEL = el.dataset.id; SD._fromRec = true; SD.range = "um"; go("enviar"); },
+  saveReport() {
+    const p = S.profile || {}, recs = reportRecords();
+    const periodo = { um: "registro selecionado", ultimo: "último registro", 7: "últimos 7 dias", 30: "últimos 30 dias" }[SD.range];
+    const html = reportHTML({ kid: p, recs, retornos: S.retornos, quem: p.resp || "responsável", periodo });
+    saveFile(`RespiraKids_${fileSafe(p.nome)}_${new Date().toISOString().slice(0, 10)}.html`, new Blob([html], { type: "text/html" }));
+    log("relatorio_baixado", SD.range);
+  },
+  waSelf() { log("whatsapp_para_si", SD.range); },
   openRec(el) { SEL = el.dataset.id; SD._fromRec = false; go("registro"); },
   more() { HF.page += 40; render(); },
   askHistory() { go("conversa"); setTimeout(() => ask("Me explique de forma simples como está o histórico de registros e se algo merece atenção."), 30); },
@@ -1762,7 +1822,30 @@ async function initContas() {
   if (CT.unsub || !window.claude) return;
   try { CT.api = await window.claude.use("contas"); } catch (e) { CT.err = (e && e.code) || "erro"; return; }
   if (__stopped) return;
-  CT.unsub = CT.api.painel(p => { CT.p = p; CT.err = null; contasRefresh(); }, e => { CT.err = e.code; contasRefresh(); });
+  CT.unsub = CT.api.painel(p => { CT.p = p; CT.err = null; contasRefresh(); ctConvitePendente(); }, e => { CT.err = e.code; contasRefresh(); });
+}
+
+/* Convite aberto por link (/vincular/CÓDIGO): o código fica guardado até a pessoa entrar. */
+const INV_KEY = "respirakids:convite";
+let invChecked = false;
+const invGet = () => { try { return localStorage.getItem(INV_KEY); } catch (e) { return null; } };
+const invClear = () => { try { localStorage.removeItem(INV_KEY); } catch (e) { } CT.convite = null; };
+async function ctConvitePendente() {
+  if (invChecked || !CT.p || __stopped) return;
+  const code = invGet(); if (!code) return;
+  invChecked = true;
+  let info = null; try { info = await CT.api.info(code); } catch (e) { }
+  if (!info || info.status !== "aberto" || info.expiresAt < Date.now()) { invClear(); toast("Este convite venceu ou já foi usado. Peça um novo.", 5000); return; }
+  if (info.souEu) { invClear(); return; }
+  const role = CT.p.me.role, precisa = info.creatorRole === "familia" ? "medico" : "familia";
+  if (precisa === "medico" && role !== "medico") { CT.convite = info; CT.form = {}; go("conta"); return; }
+  if (precisa === "familia" && role !== "familia") { invClear(); toast("Este convite é para a conta de uma família.", 5000); return; }
+  invClear();
+  const r = await ctRun("usarCodigo", { code });
+  if (r) {
+    toast(`Pronto! Agora ${r.aguardando} precisa aprovar o vínculo.`, 5000); log("convite_link_usado", "");
+    if (role === "medico") { MED.tab = "vinculos"; go("medico"); } else go("medicos");
+  }
 }
 function contasRefresh() {
   if (!["conta", "medicos", "hospital", "medico", "mais"].includes(CUR)) return;
@@ -1785,22 +1868,47 @@ function convitesCard() {
   return `<div class="card" style="border:2px solid var(--teal-d)"><h3>${icon("send", "sm")} Convites para você</h3>${r.map(i => `<div style="margin:10px 0"><p style="margin:0">${personLine(i.de)} ${i.kind === "hospital" ? "convidou você para a equipe médica." : "quer acompanhar as crianças da sua família."}</p>
     <div class="row wrap" style="margin-top:8px"><button class="btn" data-act="ctAceitar" data-id="${i.id}">Aceitar</button><button class="btn ghost" data-act="ctRecusarConvite" data-id="${i.id}">Recusar</button></div></div>`).join("")}</div>`;
 }
-function codigoCard(outro) {
+const inviteUrl = code => `${location.origin}/vincular/${code}`;
+CT.qr = {}; CT.qrBusy = {};
+function qrFor(url) {
+  if (CT.qr[url]) return CT.qr[url];
+  if (!CT.qrBusy[url]) {
+    CT.qrBusy[url] = 1;
+    QRCode.toDataURL(url, { margin: 1, width: 232, color: { dark: "#173A39", light: "#FFFFFF" } })
+      .then(d => { CT.qr[url] = d; contasRefresh(); }).catch(() => { });
+  }
+  return null;
+}
+function inviteMsg(url, code) {
+  const p = CT.p, kids = S.kids.map(k => k.nome).filter(Boolean);
+  return p && p.me.role === "medico"
+    ? `Olá! Sou ${p.me.nome}. Para eu acompanhar a respiração da sua criança pelo RespiraKids, abra o link e entre com a sua conta: ${url} (código ${fmtCode(code)})`
+    : `Olá! Quero que você acompanhe a respiração de ${kids.length ? kids.join(", ") : "minha criança"} pelo RespiraKids. Abra o link e entre com a sua conta de médico: ${url} (código ${fmtCode(code)})`;
+}
+/* Convite por link, QR code ou código. Quem recebe abre o link (ou digita o código); quem gerou aprova. */
+function codigoCard(outro, titulo) {
   const p = CT.p, now = Date.now(), meus = p.meusCodigos.filter(c => c.expiresAt > now);
   const pedidos = meus.filter(c => c.status === "pedido" && c.pedido), aberto = meus.find(c => c.status === "aberto");
-  const wa = aberto ? `https://wa.me/?text=${encodeURIComponent(`Meu código do RespiraKids para nos vincularmos: ${fmtCode(aberto.code)}`)}` : "";
-  return `<div class="card"><h3>${icon("shield", "sm")} Vincular por código</h3>
-    <p class="small muted">Um lado gera o código e manda para o outro. Quem recebe digita aqui embaixo. Depois, quem gerou o código aprova, e só então o vínculo é feito.</p>
-    ${pedidos.map(c => `<div class="notice y">${icon("user")}<div>${personLine(c.pedido)} usou o seu código <b>${fmtCode(c.code)}</b> e quer se vincular a você.
+  const url = aberto ? inviteUrl(aberto.code) : "", qr = aberto ? qrFor(url) : null;
+  return `<div class="card"><h3>${icon("send", "sm")} ${titulo || "Convidar por link"}</h3>
+    ${pedidos.map(c => `<div class="notice y">${icon("user")}<div>${personLine(c.pedido)} abriu o seu convite e quer se vincular.
       <div class="row wrap" style="margin-top:8px"><button class="btn" data-act="ctAprovar" data-id="${c.id}">Aprovar</button><button class="btn ghost" data-act="ctRecusar" data-id="${c.id}">Recusar</button></div></div></div>`).join("")}
-    ${aberto ? `<div style="text-align:center;margin:12px 0"><div class="small muted">Seu código</div><div class="bigtime" style="letter-spacing:.14em">${fmtCode(aberto.code)}</div>
-      <div class="small muted">Mande para ${outro}. Vale até ${fmtDate(aberto.expiresAt)}, ${fmtTime(aberto.expiresAt)}.</div>
-      <div class="row wrap" style="justify-content:center;margin-top:10px"><a class="btn wa" href="${wa}" target="_blank" rel="noopener">${icon("send", "sm")} Mandar pelo WhatsApp</a><button class="btn ghost" data-act="ctCancelar" data-id="${aberto.id}">Cancelar código</button></div></div>`
-      : `<button class="btn block" data-act="ctGerar">${icon("plus", "sm")} Gerar um código</button>`}
-    <div class="hr"></div>
-    <label class="f" for="ctCode">Recebeu um código? Digite aqui</label>
-    <div class="row"><input class="f" id="ctCode" data-in="ct.code" value="${esc(CT.code)}" placeholder="Ex.: K7P-3QX" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-act="ctUsar">Enviar</button></div>
-    ${p.meusPedidos.map(r => `<p class="small" style="margin:10px 0 0">${icon("timer", "sm")} Esperando <b>${esc(r.de.nome)}</b> aprovar o código ${fmtCode(r.code)}. <button class="link" data-act="ctCancelar" data-id="${r.id}">Desistir</button></p>`).join("")}
+    ${aberto ? `<div style="text-align:center;margin:8px 0 4px">
+        <p class="small muted" style="margin:0 0 10px">Mande o link para ${outro}. Quando abrir, você aprova aqui.</p>
+        <div style="display:inline-block;background:#fff;padding:10px;border-radius:16px;border:1px solid var(--line)">${qr ? `<img src="${qr}" alt="QR code do convite" width="200" height="200" style="display:block">` : `<div style="width:200px;height:200px;display:grid;place-items:center" class="small muted">Gerando QR code…</div>`}</div>
+        <p class="small muted" style="margin:10px 0 2px">ou o código</p>
+        <div class="bigtime" style="letter-spacing:.14em;font-size:2rem">${fmtCode(aberto.code)}</div>
+        <p class="small muted" style="margin:2px 0 0">Vale até ${fmtDate(aberto.expiresAt)}, ${fmtTime(aberto.expiresAt)}.</p></div>
+      <div class="stack" style="margin-top:12px">
+        <a class="btn wa block" href="https://wa.me/?text=${encodeURIComponent(inviteMsg(url, aberto.code))}" target="_blank" rel="noopener" data-act="ctWaConvite">${icon("send", "sm")} Mandar convite pelo WhatsApp</a>
+        <div class="grid2"><button class="btn ghost" data-act="ctCopiar" data-url="${esc(url)}">Copiar link</button><button class="btn ghost" data-act="ctCancelar" data-id="${aberto.id}">Cancelar</button></div>
+      </div>`
+      : `<p class="small muted">Gere um convite e mande para ${outro}: por link, QR code ou código. O convite não leva nenhum dado de saúde.</p>
+      <button class="btn block" data-act="ctGerar">${icon("plus", "sm")} Criar convite</button>`}
+    <details class="more" ${CT.code || p.meusPedidos.length ? "open" : ""} style="margin-bottom:0"><summary>Recebi um código</summary>
+      <div class="row"><input class="f" id="ctCode" data-in="ct.code" value="${esc(CT.code)}" placeholder="Ex.: K7P-3QX" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-act="ctUsar">Enviar</button></div>
+      ${p.meusPedidos.map(r => `<p class="small" style="margin:10px 0 0">${icon("timer", "sm")} Esperando <b>${esc(r.de.nome)}</b> aprovar. <button class="link" data-act="ctCancelar" data-id="${r.id}">Desistir</button></p>`).join("")}
+    </details>
   </div>`;
 }
 function convidarCard(titulo, ajuda) {
@@ -1814,12 +1922,14 @@ function convidarCard(titulo, ajuda) {
 function vConta() {
   const w = contasWait(); if (w) return w;
   const p = CT.p;
-  if (CT.form._for !== p.me.id) CT.form = { _for: p.me.id, role: p.me.role, nome: p.me.nome, crm: p.me.crm, especialidade: p.me.especialidade, cidade: p.me.cidade };
+  if (CT.form._for !== p.me.id) CT.form = { _for: p.me.id, role: CT.convite ? "medico" : p.me.role, nome: p.me.nome, crm: p.me.crm, especialidade: p.me.especialidade, cidade: p.me.cidade };
   const f = CT.form, back = p.me.role === "medico" ? "medico" : p.me.role === "hospital" ? "hospital" : S.consent ? "mais" : "termos";
   const help = { familia: "Para pais, mães e responsáveis: gravar, registrar e acompanhar a respiração das crianças.", medico: "Para médicos: ver o histórico dos pacientes vinculados, ouvir as gravações, validar e mandar orientações.", hospital: "Para hospitais e clínicas: montar a equipe de médicos. Cada médico aceita o convite para entrar." };
   return `<button class="link" data-go="${back}">${icon("back", "sm")} Voltar</button>
   <h1>Minha conta</h1>
   <p class="muted">Você entrou como ${esc(p.me.email || "")}. Tipo de conta: <b>${ROLE_TXT[p.me.role]}</b>${p.me.temPerfil ? "" : " (padrão)"}.</p>
+  ${CT.convite ? `<div class="notice info">${icon("send")}<div><b>${esc(CT.convite.nome)}</b> convidou você para acompanhar as crianças no RespiraKids. Para aceitar, escolha <b>Médico(a)</b>, informe o CRM e salve.
+    <br><button class="link" data-act="ctIgnorarConvite">Não sou médico(a): ignorar convite</button></div></div>` : ""}
   ${convitesCard()}
   <div class="card"><h3>Tipo de conta</h3>
     <div class="chips">${["familia", "medico", "hospital"].map(r => `<button class="chip" data-set="ct.form.role" data-val="${r}" data-rerender aria-pressed="${f.role === r}">${ROLE_TXT[r]}</button>`).join("")}</div>
@@ -1848,7 +1958,7 @@ function vMedicos() {
   ${convitesCard()}
   <div class="card"><h3>Médicos vinculados</h3>${p.medicos.length ? p.medicos.map(m => `<div class="row between" style="margin:12px 0;align-items:flex-start"><div>${personLine(m)}<br><span class="small muted">${m.hospitais.length ? esc(m.hospitais.join(", ")) + " · " : ""}vinculado em ${fmtDate(m.desde)}</span></div>
     <button class="link" style="color:var(--r)" data-act="ctDesvincular" data-id="${m.id}" data-nome="${esc(m.nome)}">Remover</button></div>`).join("") : `<p class="small muted" style="margin:0">Nenhum médico vinculado ainda.</p>`}</div>
-  ${codigoCard("o seu médico")}`;
+  ${codigoCard("o seu médico", "Convidar meu médico")}`;
 }
 
 /* Médico: aba "Meus pacientes" do app clínico */
@@ -1861,7 +1971,7 @@ function medVinculos() {
   <div class="card"><h3>Meus pacientes (${p.pacientes.length} família${p.pacientes.length === 1 ? "" : "s"})</h3>
     ${p.pacientes.length ? p.pacientes.map(f => `<div class="row between" style="margin:12px 0;align-items:flex-start"><div><b>${esc(f.nome)}</b> <span class="small muted">${esc(f.email || "")}</span><br><span class="small">${kidsTxt(f)}</span><br><span class="small muted">${f.registros} registro${f.registros === 1 ? "" : "s"} · vinculado em ${fmtDate(f.desde)} por ${f.via === "codigo" ? "código" : "convite"}</span></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">${f.criancas.length ? `<button class="link" data-act="ctVerFamilia" data-id="${f.id}">Ver histórico</button>` : ""}<button class="link" style="color:var(--r)" data-act="ctDesvincular" data-id="${f.id}" data-nome="${esc(f.nome)}">Remover</button></div></div>`).join("") : `<p class="small muted" style="margin:0">Nenhum paciente ainda. Gere um código e mande para a família, ou convide pelo e-mail.</p>`}</div>
-  ${codigoCard("a família")}
+  ${codigoCard("a família", "Convidar família por link")}
   ${convidarCard("Convidar família por e-mail", "Digite o e-mail que a família usa para entrar no RespiraKids. Ela vê o convite em Mais → Meus médicos e aceita.")}
   <div class="card"><h3>Meus hospitais</h3>${p.hospitais.length ? p.hospitais.map(h => `<div class="row between" style="margin:8px 0"><span><b>${esc(h.nome)}</b> <span class="small muted">desde ${fmtDate(h.desde)}</span></span><button class="link" style="color:var(--r)" data-act="ctSairEquipe" data-id="${h.id}" data-nome="${esc(h.nome)}">Sair</button></div>`).join("") : `<p class="small muted" style="margin:0">Você não faz parte de nenhum hospital. Quando um hospital convidar o seu e-mail, o convite aparece aqui.</p>`}</div>`;
 }
@@ -1909,6 +2019,12 @@ const CT_ACT = {
   async ctRecusarConvite(el) { el.disabled = true; await ctRun("responderConvite", { inviteId: el.dataset.id, aceitar: false }, "Convite recusado."); },
   ctDesvincular(el) { if (!armed(el, "Toque de novo para remover")) return; ctRun("desvincular", { outroId: el.dataset.id }, `${el.dataset.nome} foi removido(a).`); },
   ctSairEquipe(el) { if (!armed(el, "Toque de novo para confirmar")) return; ctRun("sairDaEquipe", { outroId: el.dataset.id }, "Pronto."); },
+  async ctCopiar(el) {
+    try { await navigator.clipboard.writeText(el.dataset.url); toast("Link copiado. Cole no WhatsApp, e-mail ou SMS."); }
+    catch (e) { window.prompt("Copie o link do convite:", el.dataset.url); }
+  },
+  ctWaConvite() { log("convite_whatsapp", ""); },
+  ctIgnorarConvite() { invClear(); CT.form = {}; render(); toast("Convite ignorado."); },
   async ctSair(el) { el.disabled = true; try { await CT.api.sair(); } catch (e) { el.disabled = false; toast("Não foi possível sair agora."); } },
   ctVerFamilia(el) { const k = medData().kids.find(x => x.fam === el.dataset.id); MED.tab = "criancas"; MED.fam = k ? k.id : null; MED.rec = null; render(); window.scrollTo(0, 0); }
 };

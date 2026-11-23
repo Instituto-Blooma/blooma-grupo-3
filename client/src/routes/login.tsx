@@ -28,7 +28,16 @@ const FEATURES = [
   },
 ];
 
+function readHasInvite() {
+  try {
+    return !!localStorage.getItem('respirakids:convite');
+  } catch {
+    return false;
+  }
+}
+
 function LoginPage() {
+  const hasInvite = readHasInvite();
   return (
     <div
       className="min-h-screen w-full"
@@ -73,6 +82,15 @@ function LoginPage() {
             Famílias, médicos e hospitais entram do mesmo jeito. Depois de entrar, você escolhe o
             tipo de conta.
           </p>
+          {hasInvite && (
+            <p
+              className="mb-4 rounded-2xl p-4 text-sm"
+              style={{ background: RESPIRA.tealSoft, color: RESPIRA.ink }}
+            >
+              <b>Você recebeu um convite.</b> Entre para aceitar. Depois, quem convidou aprova o
+              vínculo.
+            </p>
+          )}
           <AuthForm />
           <p
             className="mt-6 rounded-2xl p-4 text-sm"
