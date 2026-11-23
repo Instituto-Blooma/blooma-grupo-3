@@ -226,6 +226,14 @@ body.medico main{max-width:1040px;padding-bottom:40px}
 .medhead img{width:46px;height:46px;border-radius:50%}
 .medtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .retorno{border-left:4px solid var(--teal-d)}
+/* aviso de emergência com botão de ligar */
+.notice.emerg .btn{display:flex;width:100%;margin-top:10px;min-height:48px;font-size:1rem}
+/* "Saiba mais": detalhes que ficam recolhidos */
+details.more{margin:4px 0 14px}
+details.more>summary{cursor:pointer;font-weight:700;color:var(--teal-d);padding:10px 0;list-style:none}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"+ "}
+details.more[open]>summary::before{content:"− "}
 
 /* ========== computador: menu lateral e conteúdo mais largo (o celular continua igual) ========== */
 @media (min-width:960px){

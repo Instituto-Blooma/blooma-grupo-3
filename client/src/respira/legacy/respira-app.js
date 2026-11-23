@@ -678,7 +678,7 @@ function stepsBar() {
   return `<div class="row between" style="margin-bottom:8px"><button class="link" data-act="prev">${icon("back", "sm")} Voltar</button><span class="stepnum">Passo ${Math.min(i + 1, st.length)} de ${st.length}</span></div>
   <div class="steps" aria-hidden="true">${st.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("")}</div>`;
 }
-const emergencyNote = () => `<div class="notice r">${icon("alert")}<div><b>Lábios roxos, pausas na respiração, convulsão ou muito difícil de acordar?</b> Não grave. <a href="tel:192"><b>Ligue 192 (SAMU)</b></a>.</div></div>`;
+const emergencyNote = () => `<div class="notice r emerg">${icon("alert")}<div><b>Lábios roxos, pausa na respiração, convulsão ou não acorda?</b> Não grave.<a class="btn red" href="tel:192">${icon("phone", "sm")} Ligar 192 agora</a></div></div>`;
 const disclaimer = () => `<p class="disclaimer">Esta plataforma é um assistente de orientação e triagem. Ela não substitui a avaliação presencial de um médico pediatra.</p>`;
 function faces(path, cur, kind) {
   const L = kind === "seg" ? [["😟", "Nada"], ["😕", "Pouco"], ["😐", "Mais ou menos"], ["🙂", "Seguro(a)"], ["😌", "Muito"]] : [["😌", "Tranquilo(a)"], ["🙂", "Um pouco"], ["😟", "Preocupado(a)"], ["😰", "Muito"], ["😱", "Assustado(a)"]];
@@ -726,29 +726,26 @@ function vInicio() {
   let pend = "";
   if (S.pending && (!S.pending.kid || S.pending.kid === S.activeKid)) {
     const due = S.pending.t <= Date.now();
-    pend = `<div class="notice ${due ? "y" : "info"}">${icon("timer")}<div><b>${due ? `Hora de reavaliar ${p ? esc(p.nome) : ""}.` : `Reavaliar ${p ? esc(p.nome) : ""} às ${fmtTime(S.pending.t)}.`}</b> ${due ? "Grave de novo ou conte as respirações por 1 minuto." : "A última orientação foi amarela. Deixe um alarme no celular para esse horário."} ${due ? `<br><button class="link" data-act="pendingDone">Já reavaliei</button>` : ""}</div></div>`;
+    pend = `<div class="notice ${due ? "y" : "info"}">${icon("timer")}<div><b>${due ? `Hora de reavaliar ${p ? esc(p.nome) : ""}.` : `Reavaliar ${p ? esc(p.nome) : ""} às ${fmtTime(S.pending.t)}.`}</b> ${due ? "Grave de novo." : ""} ${due ? `<br><button class="link" data-act="pendingDone">Já reavaliei</button>` : ""}</div></div>`;
   }
   const dry = isDrySeason(Date.now()) || (last && last.env && (last.env.umid === "seca" || last.env.fumaca === "sim"));
   return `${pend}
   <section class="hero">
-    <h1>${p ? "Olá, " + esc(p.resp || "tudo bem?") : "Respire com a gente"}</h1>
-    <p class="muted">${p ? `Vamos acompanhar a respiração de ${esc(p.nome)}.` : "Grave 20 segundos da respiração da criança e receba uma orientação simples sobre o que fazer."}</p>
+    <h1>${p ? `Como está ${esc(p.nome)}?` : "Respire com a gente"}</h1>
     <div class="micwrap">${micBars("breathe")}
       <button class="micbtn" data-act="startFlow" aria-label="Gravar respiração. Abre a preparação, a gravação ainda não começa."><img src="${LOGO}" alt=""><span class="lbl">${icon("mic", "sm")} Gravar respiração</span></button>
     </div>
-    <p class="small muted" style="margin-top:44px">Ao tocar, você vai para a preparação. A gravação só começa quando você apertar “Começar a gravar”.</p>
+    <p class="small muted" style="margin-top:44px">20 segundos. Você recebe uma orientação na hora.</p>
   </section>
   ${emergencyNote()}
-  ${S.kids.length > 1 ? `<div class="card"><h3>Suas crianças</h3><div class="chips">${S.kids.map(k => `<button class="chip" data-act="pickKid" data-id="${k.id}" aria-pressed="${k.id === S.activeKid}"><span class="kdot" style="background:${k.color || "var(--teal)"}"></span>${esc(k.nome)}, ${ageLabel(k.age)}</button>`).join("")}<button class="chip" data-act="addKid" style="border-style:dashed">${icon("plus", "sm")} Outra</button></div></div>` : ""}
-  ${last ? `<div class="card"><div class="row between"><h3 style="margin:0">Último registro</h3><span class="small muted">${fmtDate(last.t)}, ${fmtTime(last.t)}</span></div>
-    <p style="margin:8px 0" class="row"><span class="dot d${last.level}"></span><b>${LEVELS[last.level].name}: ${LEVELS[last.level].short}</b></p>
-    <p class="small muted">${last.rr && last.rr.value ? last.rr.value + " respirações por minuto · " : ""}${[...last.red, ...last.sym].map(k => SYM_ALL[k] ? SYM_ALL[k].t.toLowerCase() : "").join(", ") || "sem sintomas marcados"}</p>
-    <button class="link" data-act="openRec" data-id="${last.id}">Ver detalhes</button></div>` : ""}
-  <div class="card"><div class="row">${icon("book", "lg")}<div><h3 style="margin:0">Diário respiratório</h3><p class="small muted" style="margin:0">${wk} registro${wk === 1 ? "" : "s"}${p ? " de " + esc(p.nome) : ""} nos últimos 7 dias. Registrar todo dia ajuda o pediatra a ver o padrão.</p></div></div>
-    <div class="hr"></div><div class="stack"><button class="btn ghost block" data-act="startDiary">${icon("edit", "sm")} Registrar sintomas sem gravar</button>
-    <button class="btn ghost block" data-act="startRetro">${icon("calendar", "sm")} Registrar um dia anterior</button></div></div>
-  ${dry ? `<div class="card"><div class="row">${icon("sun", "lg")}<div><h3 style="margin:0">Tempo seco e fumaça</h3><p class="small muted" style="margin:0">Entre junho e outubro, grande parte do Brasil tem ar seco e queimadas. Água em pequenos goles, soro no nariz e janelas fechadas nas horas de fumaça ajudam.</p></div></div></div>` : ""}
-  <div class="grid2">
+  ${S.kids.length > 1 ? `<div class="chips" style="margin-bottom:14px">${S.kids.map(k => `<button class="chip" data-act="pickKid" data-id="${k.id}" aria-pressed="${k.id === S.activeKid}"><span class="kdot" style="background:${k.color || "var(--teal)"}"></span>${esc(k.nome)}</button>`).join("")}</div>` : ""}
+  <div class="grid2" style="margin-bottom:14px">
+    <button class="btn ghost" data-act="startDiary">${icon("edit", "sm")} Anotar sintomas</button>
+    <button class="btn ghost" data-act="startRetro">${icon("calendar", "sm")} Dia anterior</button>
+  </div>
+  ${last ? `<p class="small muted" style="margin:0 0 6px">Último registro · ${fmtDate(last.t)}${wk > 1 ? ` · ${wk} nos últimos 7 dias` : ""}</p>${tlItem(last)}` : ""}
+  ${dry ? `<details class="card flat" style="padding:12px 14px;margin-top:8px"><summary class="row" style="cursor:pointer;list-style:none">${icon("sun")}<b>Dica: tempo seco e fumaça</b></summary><p class="small" style="margin:8px 0 0">Água em pequenos goles, soro no nariz e janelas fechadas nas horas de fumaça ajudam.</p></details>` : ""}
+  <div class="grid2" style="margin-top:14px">
     <button class="btn ghost" data-go="enviar">${icon("send", "sm")} Enviar ao médico</button>
     <button class="btn ghost" data-go="conversa">${icon("chat", "sm")} Tirar dúvida</button>
   </div>`;
@@ -787,25 +784,24 @@ function vGravar() {
   if (!F) newFlow();
   const s = F.step;
   if (s === "pre") return `${stepsBar()}
-    <h2>Como você está agora?</h2><p>O quão preocupado(a) você está neste momento?</p>
-    ${faces("flow.anx", F.anx)}
-    <p class="small muted" style="margin-top:10px">Isso ajuda a entender como o app apoia as famílias. Não muda a orientação.</p>
     ${emergencyNote()}
-    <button class="btn block" data-act="next" ${F.anx ? "" : "disabled"}>Continuar</button>`;
+    <h2>Quão preocupado(a) você está?</h2>
+    ${faces("flow.anx", F.anx)}
+    <p class="small muted" style="margin-top:8px">Opcional.</p>
+    <button class="btn block" data-act="next">Continuar</button>`;
   if (s === "prep") return `${stepsBar()}
-    <h2>Prepare a gravação</h2><p class="muted">Quatro cuidados para o som sair claro:</p>
+    <h2>Prepare a gravação</h2>
     <div class="guide">
       <div class="gcard"><svg viewBox="0 0 120 70" aria-hidden="true"><rect x="10" y="12" width="44" height="30" rx="4" fill="none" stroke="var(--teal)" stroke-width="2.5"/><path d="M26 50h12M32 42v8" stroke="var(--teal)" stroke-width="2.5"/><path d="M8 8l50 40" stroke="var(--r)" stroke-width="3" stroke-linecap="round"/><path d="M76 25h8l10-8v34l-10-8h-8z" fill="none" stroke="var(--teal)" stroke-width="2.5" stroke-linejoin="round"/><path d="M100 28l10 12M110 28l-10 12" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round"/></svg><b>Silêncio</b>Desligue TV e ventilador. Ninguém fala.</div>
       <div class="gcard"><svg viewBox="0 0 120 70" aria-hidden="true"><circle cx="30" cy="30" r="17" fill="none" stroke="var(--teal)" stroke-width="2.5"/><path d="M24 36c3 3 9 3 12 0" fill="none" stroke="var(--teal)" stroke-width="2"/><circle cx="25" cy="27" r="1.6" fill="var(--teal)"/><circle cx="35" cy="27" r="1.6" fill="var(--teal)"/><path d="M8 68c2-12 12-18 22-18s20 6 22 18" fill="none" stroke="var(--teal)" stroke-width="2.5"/><rect x="92" y="18" width="18" height="32" rx="4" fill="none" stroke="var(--teal-d)" stroke-width="2.5"/><path d="M50 40h38M50 40l5-4M50 40l5 4M88 40l-5-4M88 40l-5 4" stroke="var(--ink)" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="69" y="56" font-size="10" text-anchor="middle" fill="var(--ink)" font-family="Atkinson Hyperlegible, sans-serif">15–20 cm</text></svg><b>Uma mão de distância</b>Celular a 15–20 cm do queixo, microfone virado para a criança.</div>
       <div class="gcard"><svg viewBox="0 0 120 70" aria-hidden="true"><circle cx="60" cy="20" r="12" fill="none" stroke="var(--teal)" stroke-width="2.5"/><path d="M55 23c3 2 7 2 10 0" fill="none" stroke="var(--teal)" stroke-width="2"/><path d="M42 62V44c0-6 8-10 18-10s18 4 18 10v18M30 62h60" fill="none" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round"/><path d="M84 14c4 2 4 8 0 10M90 10c7 4 7 14 0 18" fill="none" stroke="var(--teal-d)" stroke-width="2" stroke-linecap="round"/></svg><b>Criança calma</b>Sentada ou deitada, sem chorar e sem falar.</div>
       <div class="gcard"><svg viewBox="0 0 120 70" aria-hidden="true"><circle cx="60" cy="38" r="24" fill="none" stroke="var(--teal)" stroke-width="2.5"/><path d="M60 38V24M60 38l10 6M52 8h16" stroke="var(--teal-d)" stroke-width="2.5" stroke-linecap="round"/><path d="M60 14a24 24 0 0 1 22 15" stroke="var(--teal-d)" stroke-width="5" fill="none" stroke-linecap="round"/></svg><b>15 a 20 segundos</b>A gravação para sozinha aos 20 s.</div>
     </div>
-    <label class="f">Onde vocês estão?</label>${chips("flow.local", [["quarto", "Quarto"], ["sala", "Sala"], ["carro", "Carro"], ["fora", "Ao ar livre"], ["outro", "Outro"]], F.local, false, true)}
     <label class="f">O que a criança está fazendo?</label>${chips("flow.momento", [["dormindo", "Dormindo"], ["calma", "Acordada e calma"], ["brincou", "Acabou de brincar"], ["chorando", "Chorando"]], F.momento, false, true)}
     ${F.momento === "chorando" ? `<div class="notice y" style="margin-top:10px">${icon("info")}<div>O choro muda a respiração. Se puder, espere ela se acalmar antes de gravar.</div></div>` : ""}
     ${F.momento === "brincou" ? `<div class="notice y" style="margin-top:10px">${icon("info")}<div>Depois de brincar a respiração fica mais rápida. Espere uns 5 minutos de descanso.</div></div>` : ""}
-    <p class="small muted" style="margin-top:12px">${icon("clock", "sm")} Data e hora registradas automaticamente: ${fmtDay(F.t)}, ${fmtTime(F.t)}.</p>
-    <button class="btn block" data-act="next" ${F.local && F.momento ? "" : "disabled"}>Continuar</button>`;
+    <details class="more"><summary>Onde vocês estão? (opcional)</summary>${chips("flow.local", [["quarto", "Quarto"], ["sala", "Sala"], ["carro", "Carro"], ["fora", "Ao ar livre"], ["outro", "Outro"]], F.local, false, false)}</details>
+    <button class="btn block" data-act="next" ${F.momento ? "" : "disabled"}>Continuar</button>`;
   if (s === "mic" || (s === "rec" && !R.stream)) { F.step = "mic"; return vMic(); }
   if (s === "rec") return `${stepsBar()}
     <h2>Grave a respiração</h2>
@@ -836,18 +832,17 @@ function vMic() {
   else if (e) help = "<b>Este navegador não deixou gravar aqui.</b> Use o gravador do celular e envie o arquivo pela opção abaixo.";
   return `${stepsBar()}
     <h2>Liberar o microfone</h2>
-    <p>O navegador vai perguntar se o RespiraKids pode usar o microfone. Toque em <b>Permitir</b>.</p>
+    <p>Quando o celular perguntar, toque em <b>Permitir</b>.</p>
     <div class="card flat" aria-hidden="true" style="background:var(--field)">
       <div class="row small" style="font-weight:700">${icon("mic", "sm")} Este site quer usar seu microfone</div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;gap:8px"><span class="chip" style="min-height:36px">Bloquear</span><span class="chip" style="min-height:36px;background:var(--teal-d);color:#fff;border-color:var(--teal-d);outline:3px solid var(--y);outline-offset:3px">Permitir</span></div>
       <p class="small" style="text-align:right;margin:8px 0 0;color:var(--y);font-weight:700">↑ toque aqui</p>
     </div>
-    <p class="small muted">O microfone só é usado nos 20 segundos da gravação. Nada é gravado antes de você apertar “Começar a gravar”.</p>
     ${help ? `<div class="notice y">${icon("alert")}<div>${help}</div></div>` : ""}
     <button class="btn block" data-act="allowMic">${icon("mic", "sm")} ${e ? "Tentar de novo" : "Liberar microfone"}</button>
-    <div class="card" style="margin-top:14px"><h3>Outra forma: use o gravador do celular</h3>
-      <ol class="acts small"><li>Abra o app Gravador (Android) ou Gravador/Memos de Voz (iPhone).</li><li>Grave 20 segundos seguindo as dicas do passo anterior.</li><li>Volte aqui e toque em “Enviar arquivo de áudio”.</li></ol>
-      <button class="btn ghost block" data-act="pickFile">${icon("upload", "sm")} Enviar arquivo de áudio</button></div>`;
+    <details class="more" ${e ? "open" : ""}><summary>Não funcionou? Use o gravador do celular</summary>
+      <ol class="acts small"><li>Grave 20 segundos no app Gravador (Android) ou Memos de Voz (iPhone).</li><li>Volte aqui e envie o arquivo.</li></ol>
+      <button class="btn ghost block" data-act="pickFile">${icon("upload", "sm")} Enviar arquivo de áudio</button></details>`;
 }
 
 function vOuvir() {
@@ -862,18 +857,19 @@ function vOuvir() {
   const bad = a.quality === "ruim";
   return `${stepsBar()}
     <h2>Ouça a gravação</h2>
-    <p>Dá para ouvir a respiração? Se tiver muito barulho, conversa ou choro, grave de novo.</p>
+    <p>Dá para ouvir a respiração? Se tiver barulho ou choro, grave de novo.</p>
     <audio controls src="${F.audio.url}"></audio>
-    <canvas class="spec" id="specCanvas" role="img" aria-label="Desenho do som da gravação"></canvas>
-    <p class="small muted" style="margin-top:6px">Desenho do som: as faixas claras são a respiração e a tosse. ${a.trimmed ? "Já cortamos o 1º e o último segundo para tirar cliques e falas." : ""}</p>
-    <div class="qual"><div>Qualidade<b>${a.quality}</b></div><div>Duração<b>${Math.round(a.durRaw)} s</b></div><div>Ruído<b>${noise}</b></div></div>
     ${a.issues.length ? `<div class="notice y">${icon("alert")}<div>${a.issues.join("<br>")}</div></div>` : ""}
     <div class="card">
-      <h3>Contagem de respirações</h3>
-      ${a.rrAudio ? `<p>Pelo áudio: <b>${a.rrAudio} por minuto</b> <span class="small muted">(${confTxt})</span></p>` : `<p>O áudio não permitiu contar as respirações.</p>`}
-      ${a.conf === "baixa" ? `<p class="small">O som não deixou contar com segurança. <b>Conte junto com a gente:</b> com ela calma, toque no botão cada vez que a barriga subir.</p>` : `<p class="small muted">Quer conferir? A sua contagem tem prioridade sobre a do áudio.</p>`}
+      ${a.rrAudio ? `<p style="margin:0 0 6px">Respirações: <b>${a.rrAudio} por minuto</b> <span class="small muted">(${confTxt})</span></p>` : `<p style="margin:0 0 6px">O áudio não permitiu contar as respirações.</p>`}
+      ${a.conf === "baixa" ? `<p class="small"><b>Conte junto com a gente:</b> toque no botão cada vez que a barriga subir.</p>` : ""}
       ${counter}
     </div>
+    <details class="more"><summary>Detalhes da gravação</summary>
+      <canvas class="spec" id="specCanvas" role="img" aria-label="Desenho do som da gravação"></canvas>
+      <p class="small muted" style="margin-top:6px">As faixas claras são a respiração e a tosse.${a.trimmed ? " Já cortamos o 1º e o último segundo." : ""}</p>
+      <div class="qual"><div>Qualidade<b>${a.quality}</b></div><div>Duração<b>${Math.round(a.durRaw)} s</b></div><div>Ruído<b>${noise}</b></div></div>
+    </details>
     <div class="grid2">
       <button class="btn ${bad ? "" : "ghost"}" data-act="redo">${icon("mic", "sm")} Gravar de novo</button>
       <button class="btn ${bad ? "ghost" : ""}" data-act="next">${bad ? "Usar mesmo assim" : "Usar esta gravação"}</button>
@@ -887,7 +883,7 @@ function symTile(s, red) {
 function vFlowSintomas() {
   return `${stepsBar()}
     <h2>${F.mode === "anterior" ? `Como ${esc(S.profile.nome)} estava?` : `Como ${esc(S.profile.nome)} está agora?`}</h2>
-    <p class="muted">Toque em tudo o que você está vendo. Pode marcar mais de um ou nenhum.</p>
+    <p class="muted">Marque o que você vê (ou nada).</p>
     <div class="sec-title">${icon("alert")}<h3 style="margin:0">Sinais de alerta</h3></div>
     <div class="sgrid">${RED.map(s => symTile(s, true)).join("")}</div>
     ${F.red.length && F.mode !== "anterior" ? `<div class="notice r" style="margin-top:12px">${icon("alert")}<div><b>Você marcou um sinal de alerta.</b> Procure atendimento agora. Lábios roxos, pausas, convulsão ou difícil de acordar: <a href="tel:192"><b>ligue 192</b></a>.</div></div>` : ""}
@@ -902,15 +898,14 @@ function vAmbiente() {
   const inp = (k, label, ph, mode) => `<label class="f" for="env_${k}">${label}</label><input class="f" id="env_${k}" data-in="flow.env.${k}" value="${esc(e[k])}" placeholder="${ph}" ${mode ? `inputmode="${mode}"` : ""}>`;
   return `${stepsBar()}
     <h2>${F.mode === "anterior" ? "Como estava o ar naquele dia?" : "Como está o ar hoje?"}</h2>
-    <p class="muted">Ar seco e fumaça também causam tosse. Isso ajuda a separar o que é do ambiente do que pode ser doença.</p>
+    <p class="muted">Ar seco e fumaça também causam tosse. Pode pular.</p>
     <label class="f">Umidade do ar</label>${chips("flow.env.umid", [["seca", "Muito seco"], ["normal", "Normal"], ["umida", "Úmido ou chuvoso"], ["nsei", "Não sei"]], e.umid)}
     <label class="f">Tem fumaça ou cheiro de queimada?</label>${chips("flow.env.fumaca", [["sim", "Sim"], ["nao", "Não"], ["nsei", "Não sei"]], e.fumaca)}
-    <details style="margin-top:14px"><summary class="link" style="list-style:none">Tenho os números do clima (opcional)</summary>
+    <details class="more" style="margin-top:12px"><summary>Mais detalhes (opcional)</summary>
       <div class="grid2">${inp("temp", "Temperatura (°C)", "Ex.: 31", "decimal")}${inp("umidPct", "Umidade (%)", "Ex.: 18", "numeric")}</div>
       ${inp("pm25", "Qualidade do ar: PM2,5 (µg/m³)", "Veja no app de qualidade do ar", "decimal")}
+      ${inp("cidade", "Cidade e bairro", "Ex.: Cuiabá, Centro")}
     </details>
-    ${inp("cidade", "Cidade e bairro (opcional)", "Ex.: Cuiabá, Centro")}
-    <p class="small muted" style="margin-top:12px">${icon("clock", "sm")} ${F.mode === "anterior" ? "Data do registro" : "Registrado automaticamente"}: ${fmtDay(F.t)}, ${fmtTime(F.t)}, ${seasonOf(F.t).toLowerCase()}${isDrySeason(F.t) ? ", época de tempo seco e queimadas em boa parte do país" : ""}.</p>
     <button class="btn block" data-act="finish">${F.mode === "anterior" ? "Salvar registro" : "Ver orientação"}</button>`;
 }
 
@@ -920,8 +915,8 @@ function reasonsBlock(rec) {
   const items = rec.reasons.slice().sort((a, b) => b.l - a.l).map(r => `<li>${esc(r.t)} ${(r.src || []).map(s => `<sup class="src">[${num(s)}]</sup>`).join("")}</li>`).join("");
   const acts = actionsFor(rec.level, rec.airIssue, S.profile);
   const aSrc = actionSrc(rec.level).map(s => `<sup class="src">[${num(s)}]</sup>`).join("");
-  return { html: `<div class="card"><h3>Por que essa orientação?</h3><ul class="plain">${items}</ul></div>
-    <div class="card"><h3>O que fazer agora ${aSrc}</h3><ol class="acts">${acts.map(a => `<li>${esc(a)}</li>`).join("")}</ol></div>`, ids };
+  return { html: `<div class="card"><h3>O que fazer agora ${aSrc}</h3><ol class="acts">${acts.map(a => `<li>${esc(a)}</li>`).join("")}</ol></div>
+    <details class="more"><summary>Por que essa orientação?</summary><ul class="plain">${items}</ul></details>`, ids };
 }
 function rrText(rr) { if (!rr || !rr.value) return "Contagem de respirações não confirmada"; return `${rr.value} respirações por minuto (${rr.source === "manual" ? "contadas por você" : "estimadas pelo áudio, confiança " + (rr.conf === "media" ? "média" : rr.conf)})`; }
 
@@ -935,17 +930,16 @@ function vResultado() {
     </div>
     ${rec.retro ? `<div class="notice info">${icon("clock")}<div><b>Registro de ${fmtDay(rec.t)}, ${fmtTime(rec.t)}.</b> A orientação vale para aquele momento. Se ${esc(kidName(rec.kid))} está com sintomas agora, faça também um registro de agora.</div></div>` : ""}
     ${rec.level === 2 && !rec.retro ? `<div class="stack" style="margin-bottom:14px"><a class="btn red block" href="tel:192">${icon("phone", "sm")} Ligar 192 (SAMU)</a><a class="btn ghost block" href="https://www.google.com/maps/search/pronto+atendimento+pedi%C3%A1trico" target="_blank" rel="noopener">${icon("pin", "sm")} Ver pronto-atendimentos no mapa</a></div>` : ""}
-    ${rec.level === 1 && S.pending && S.pending.id === rec.id ? `<div class="notice y">${icon("timer")}<div><b>Reavalie às ${fmtTime(S.pending.t)}.</b> Vamos lembrar você na tela inicial. Para não esquecer, crie também um alarme no celular.</div></div>` : ""}
+    ${rec.level === 1 && S.pending && S.pending.id === rec.id ? `<div class="notice y">${icon("timer")}<div><b>Reavalie às ${fmtTime(S.pending.t)}.</b> Vamos lembrar você na tela inicial.</div></div>` : ""}
     ${rb.html}
+    <div class="stack" style="margin-bottom:14px">
+      <button class="btn wa block" data-act="sendRec" data-id="${rec.id}">${icon("send", "sm")} Enviar ao médico</button>
+      <div class="grid2"><button class="btn ghost" data-act="home">Início</button><button class="btn ghost" data-go="conversa">${icon("chat", "sm")} Tirar dúvida</button></div>
+    </div>
+    ${rec.retro ? "" : `<div class="card flat"><h3 style="margin-bottom:10px">Você se sente seguro(a) com essa decisão?</h3>${faces("", F.secure, "seg")}
+      ${F.secure ? `<p class="small muted" style="margin:10px 0 0">Obrigado!</p>` : ""}</div>`}
     ${srcList(rb.ids)}
-    ${disclaimer()}
-    ${rec.retro ? "" : `<div class="card"><h3>O quanto seguro(a) você se sente com a decisão atual?</h3>${faces("", F.secure, "seg")}
-      ${F.secure ? `<p class="small muted" style="margin:10px 0 0">Obrigado. Depois, conte para a gente o que aconteceu: isso ajuda a melhorar as orientações.</p>` : ""}</div>`}
-    <div class="stack">
-      <button class="btn wa block" data-act="sendRec" data-id="${rec.id}">${icon("send", "sm")} Enviar relatório e áudio ao médico</button>
-      <div class="grid2"><button class="btn ghost" data-go="historico">Ver histórico</button><button class="btn ghost" data-act="home">Início</button></div>
-      <button class="btn ghost block" data-go="conversa">${icon("chat", "sm")} Tirar uma dúvida sobre esta orientação</button>
-    </div>`;
+    ${disclaimer()}`;
 }
 
 /* ========== crianças (várias por conta) ========== */
@@ -1252,31 +1246,22 @@ function vMais() {
     ${S.kids.length ? S.kids.map(k => `<p class="row" style="margin:8px 0 0"><span class="kdot" style="background:${k.color || "var(--teal)"}"></span><b>${esc(k.nome)}</b><span class="small muted">${ageLabel(k.age)}${(k.cond || []).filter(c => c !== "nenhum").length ? " · " + k.cond.filter(c => c !== "nenhum").join(", ") : ""}</span></p>`).join("") : `<p class="small muted">Nenhuma criança cadastrada ainda.</p>`}
     <div class="hr"></div><button class="btn ghost block" data-act="addKid">${icon("plus", "sm")} Adicionar outra criança</button></div>
   <div class="card stack">
+    <button class="btn ghost block" data-go="medicos">${icon("cross", "sm")} Meus médicos${ctPendentes() ? ` <span class="demo">${ctPendentes()} novo${ctPendentes() > 1 ? "s" : ""}</span>` : ""}</button>
     <button class="btn ghost block" data-go="enviar">${icon("send", "sm")} Enviar relatório ao médico</button>
     <button class="btn ghost block" data-go="sintomas">${icon("heart", "sm")} Guia de sintomas</button>
+    <button class="btn ghost block" data-go="conta">${icon("user", "sm")} Minha conta</button>
+    ${CLOUD.admin ? `<a class="btn ghost block" href="#medico">${icon("cross", "sm")} App clínico</a>` : ""}
+    ${CLOUD.isAdmin ? `<button class="btn ghost block" data-go="equipe">${icon("db", "sm")} Monitoramento (equipe técnica)</button>` : ""}
   </div>
-  <h2>Médicos</h2>
-  <div class="card stack">
-    <button class="btn ghost block" data-go="medicos">${icon("cross", "sm")} Meus médicos${ctPendentes() ? ` <span class="demo">${ctPendentes()} novo${ctPendentes() > 1 ? "s" : ""}</span>` : ""}</button>
-    <p class="small muted" style="margin:0">Vincule o pediatra da criança: ele acompanha o histórico, ouve as gravações e manda orientações que aparecem aqui no app.</p>
-  </div>
-  <h2>Conta</h2>
-  <div class="card stack">
-    <button class="btn ghost block" data-go="conta">${icon("user", "sm")} Minha conta (família, médico ou hospital)</button>
-    ${CLOUD.admin ? `<a class="btn ghost block" href="#medico">${icon("cross", "sm")} Abrir o app clínico (análise médica)</a>` : ""}
-    <button class="btn ghost block" data-go="equipe">${icon("db", "sm")} Monitoramento de dados (equipe técnica)</button>
-  </div>
-  <h2>Privacidade</h2>
-  <div class="card stack">
+  <details class="more"><summary>Privacidade e meus dados</summary><div class="card stack">
     <p class="small" style="margin:0">${icon("db", "sm")} <span id="syncTxt">${syncText()}</span></p>
     ${CLOUD.ready ? `<button class="btn ghost block" data-act="toggleCloud">${S.consent && S.consent.cloud ? "Parar de compartilhar e apagar do banco" : "Guardar no banco e compartilhar com profissionais"}</button>` : ""}
     <p class="small" style="margin:0">Termo versão ${S.consent ? S.consent.version : "–"} aceito em ${S.consent ? fmtDay(S.consent.t) + ", " + fmtTime(S.consent.t) : "–"}. Pesquisa anônima: ${S.consent && S.consent.research ? "autorizada" : "não autorizada"}.</p>
     <button class="btn ghost block" data-go="termos">Rever o termo de consentimento</button>
     <button class="btn ghost block" data-act="exportJson">${icon("download", "sm")} Exportar meus dados</button>
     <button class="btn ghost block" data-act="wipe" style="color:var(--r)">${icon("trash", "sm")} Apagar tudo e retirar consentimento</button>
-  </div>
-  <h2>Fontes médicas</h2>
-  <div class="card"><ol class="small muted" style="padding-left:1.3em;margin:0">${Object.keys(SRC).map(k => `<li style="margin-bottom:6px">${esc(SRC[k])}</li>`).join("")}</ol></div>
+  </div></details>
+  <details class="more"><summary>Fontes médicas</summary><div class="card"><ol class="small muted" style="padding-left:1.3em;margin:0">${Object.keys(SRC).map(k => `<li style="margin-bottom:6px">${esc(SRC[k])}</li>`).join("")}</ol></div></details>
   ${disclaimer()}
   <p class="small muted">RespiraKids · MVP versão ${APP_VERSION}.</p>`;
 }
@@ -1858,8 +1843,8 @@ function vMedicos() {
   const shared = S.consent && S.consent.cloud;
   return `<button class="link" data-go="mais">${icon("back", "sm")} Voltar</button>
   <h1>Meus médicos</h1>
-  <p class="muted">Os médicos vinculados veem o histórico de todas as crianças da sua conta, ouvem as gravações e podem mandar orientações, que aparecem no Histórico. Você pode remover um médico quando quiser.</p>
-  ${!shared ? `<div class="notice y">${icon("alert")}<div>Seus registros ainda estão só neste aparelho. Para o médico ver, toque em <b>Guardar no banco e compartilhar com profissionais</b> em Mais → Privacidade.</div></div>` : ""}
+  <p class="muted">Seu médico vê o histórico das crianças e pode mandar orientações. Você pode remover quando quiser.</p>
+  ${!shared ? `<div class="notice y">${icon("alert")}<div>Seus registros estão só neste aparelho. Para o médico ver, é preciso compartilhar.${CLOUD.ready ? `<button class="btn block" style="margin-top:10px" data-act="toggleCloud">Compartilhar com meus médicos</button>` : ""}</div></div>` : ""}
   ${convitesCard()}
   <div class="card"><h3>Médicos vinculados</h3>${p.medicos.length ? p.medicos.map(m => `<div class="row between" style="margin:12px 0;align-items:flex-start"><div>${personLine(m)}<br><span class="small muted">${m.hospitais.length ? esc(m.hospitais.join(", ")) + " · " : ""}vinculado em ${fmtDate(m.desde)}</span></div>
     <button class="link" style="color:var(--r)" data-act="ctDesvincular" data-id="${m.id}" data-nome="${esc(m.nome)}">Remover</button></div>`).join("") : `<p class="small muted" style="margin:0">Nenhum médico vinculado ainda.</p>`}</div>
