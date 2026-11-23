@@ -66,12 +66,91 @@ const schema = defineSchema({
   respiraDocs: defineTable({
     path: v.string(),
     collection: v.string(),
+    /** Conta da família dona do dado (para o médico vinculado encontrar só os pacientes dele). */
+    family: v.optional(v.string()),
     data: v.any(),
     updatedAt: v.number(),
     updatedBy: v.id('users'),
   })
     .index('by_path', ['path'])
-    .index('by_collection', ['collection']),
+    .index('by_collection', ['collection'])
+    .index('by_collection_and_family', ['collection', 'family']),
+
+  /** Tipo de conta: família (padrão), médico ou hospital. */
+  respiraProfiles: defineTable({
+    userId: v.id('users'),
+    role: v.union(v.literal('familia'), v.literal('medico'), v.literal('hospital')),
+    nome: v.string(),
+    crm: v.optional(v.string()),
+    especialidade: v.optional(v.string()),
+    cidade: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index('by_user', ['userId']),
+
+  /** Família ↔ médico: o médico vê todo o histórico das crianças dessa família. */
+  respiraLinks: defineTable({
+    familyId: v.id('users'),
+    doctorId: v.id('users'),
+    via: v.union(v.literal('codigo'), v.literal('convite')),
+    createdAt: v.number(),
+  })
+    .index('by_family', ['familyId'])
+    .index('by_doctor', ['doctorId'])
+    .index('by_family_and_doctor', ['familyId', 'doctorId']),
+
+  /**
+   * Código de vínculo: um lado gera, o outro digita (vira "pedido"),
+   * e quem gerou aprova ou recusa.
+   */
+  respiraCodes: defineTable({
+    code: v.string(),
+    createdBy: v.id('users'),
+    creatorRole: v.union(v.literal('familia'), v.literal('medico')),
+    status: v.union(
+      v.literal('aberto'),
+      v.literal('pedido'),
+      v.literal('aprovado'),
+      v.literal('recusado'),
+      v.literal('cancelado')
+    ),
+    requestedBy: v.optional(v.id('users')),
+    requestedAt: v.optional(v.number()),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index('by_code', ['code'])
+    .index('by_creator', ['createdBy'])
+    .index('by_requester', ['requestedBy']),
+
+  /**
+   * Convites por e-mail: médico convida família ("familia")
+   * ou hospital convida médico ("hospital"). Quem recebe aceita ou recusa.
+   */
+  respiraInvites: defineTable({
+    kind: v.union(v.literal('familia'), v.literal('hospital')),
+    fromId: v.id('users'),
+    email: v.string(),
+    status: v.union(
+      v.literal('pendente'),
+      v.literal('aceito'),
+      v.literal('recusado'),
+      v.literal('cancelado')
+    ),
+    toId: v.optional(v.id('users')),
+    createdAt: v.number(),
+  })
+    .index('by_email_and_status', ['email', 'status'])
+    .index('by_from_and_status', ['fromId', 'status']),
+
+  /** Médicos que fazem parte de um hospital (o médico aceitou o convite). */
+  respiraHospitalDoctors: defineTable({
+    hospitalId: v.id('users'),
+    doctorId: v.id('users'),
+    createdAt: v.number(),
+  })
+    .index('by_hospital', ['hospitalId'])
+    .index('by_doctor', ['doctorId'])
+    .index('by_hospital_and_doctor', ['hospitalId', 'doctorId']),
 });
 
 export default schema;

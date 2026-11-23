@@ -170,16 +170,19 @@ export async function assertOAuthAllowed(ctx: MutationCtx, email: string) {
   }
 
   const user = await resolveCanonicalUserByEmail(ctx, normalized);
-  if (!user) {
-    return { allowed: false as const, reason: 'no_account' as const };
-  }
 
-  if (isOAuthAllowedStatus(user.onboardingStatus)) {
+  // RespiraKids: cadastro aberto. Famílias, médicos e hospitais criam a própria conta
+  // (o template original só deixava entrar quem tinha sido convidado para uma organização).
+  if (!user) {
     return { allowed: true as const };
   }
 
   if (user.onboardingStatus === 'pending') {
     return { allowed: false as const, reason: 'pending_invite' as const };
+  }
+
+  if (isOAuthAllowedStatus(user.onboardingStatus) || user.onboardingStatus === undefined) {
+    return { allowed: true as const };
   }
 
   return { allowed: false as const, reason: 'no_account' as const };

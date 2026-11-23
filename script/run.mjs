@@ -89,6 +89,12 @@ const FIRST_SETUP_EMULATE_USERS = [
 /** OAuth-only personas for Cypress attempt-mode flows (not necessarily in Convex DB). */
 const EMULATE_OAUTH_EXTRA_USERS = [
   { email: 'unprovisioned@example.com', name: 'Unprovisioned User' },
+  // RespiraKids: contas de demonstração (login emulado, só em dev/staging).
+  { email: 'maria.mae@example.com', name: 'Maria (mãe)' },
+  { email: 'joao.pai@example.com', name: 'João (pai)' },
+  { email: 'dra.ana@example.com', name: 'Dra. Ana (pediatra)' },
+  { email: 'dr.paulo@example.com', name: 'Dr. Paulo (pneumologista)' },
+  { email: 'hospital@example.com', name: 'Hospital Infantil' },
 ];
 
 function mergeEmulateUsers(dbUsers) {

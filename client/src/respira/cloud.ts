@@ -11,7 +11,12 @@ import { api } from '../../../convex/_generated/api';
 
 type DocData = Record<string, unknown>;
 type Snap = { id: string; exists: boolean; data: () => DocData | null };
-type Me = { id: string; admin: boolean; name: string | null };
+type Me = {
+  id: string;
+  admin: boolean;
+  role: 'familia' | 'medico' | 'hospital';
+  name: string | null;
+};
 
 const lastSegment = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
@@ -41,7 +46,11 @@ function collectionSnap(rows: { id: string; data: unknown }[]) {
   };
 }
 
-export function createRespiraRuntime(client: ConvexReactClient, me: Me) {
+export function createRespiraRuntime(
+  client: ConvexReactClient,
+  me: Me,
+  options: { signOut: () => Promise<void> }
+) {
   async function run<T>(p: Promise<T>): Promise<T> {
     try {
       return await p;
@@ -98,14 +107,47 @@ export function createRespiraRuntime(client: ConvexReactClient, me: Me) {
 
   const user = {
     id: async () => me.id,
-    canEdit: async () => me.admin,
+    /** Acesso ao app clínico: médicos (só os pacientes deles) e a equipe do projeto (tudo). */
+    canEdit: async () => me.admin || me.role === 'medico',
+    isAdmin: async () => me.admin,
+    role: async () => me.role,
     profiles: (ids: string[]) => run(client.query(api.respira.profiles, { ids })),
   };
 
+  /** Contas, vínculos família ↔ médico e equipes de hospital (convex/respiraContas.ts). */
+  const contasMutations = {
+    salvarPerfil: api.respiraContas.salvarPerfil,
+    gerarCodigo: api.respiraContas.gerarCodigo,
+    usarCodigo: api.respiraContas.usarCodigo,
+    responderPedido: api.respiraContas.responderPedido,
+    cancelarCodigo: api.respiraContas.cancelarCodigo,
+    convidar: api.respiraContas.convidar,
+    cancelarConvite: api.respiraContas.cancelarConvite,
+    responderConvite: api.respiraContas.responderConvite,
+    desvincular: api.respiraContas.desvincular,
+    sairDaEquipe: api.respiraContas.sairDaEquipe,
+  } as const;
+  const contas = {
+    painel: (
+      cb: (p: FunctionReturnType<typeof api.respiraContas.painel>) => void,
+      onError?: (e: { code: string }) => void
+    ) => watch(api.respiraContas.painel, {}, cb, onError),
+    sair: () => options.signOut(),
+    call: (name: keyof typeof contasMutations, args: Record<string, unknown> = {}) => {
+      const fn = contasMutations[name];
+      if (!fn)
+        return Promise.reject({ code: 'invalid_argument', message: `Ação desconhecida: ${name}` });
+      return run(client.mutation(fn, args as never));
+    },
+  };
+
   return {
+    /** Conta logada: separa os dados guardados no aparelho por conta. */
+    uid: me.id,
     use: async (name: string) => {
       if (name === 'db') return db;
       if (name === 'user') return user;
+      if (name === 'contas') return contas;
       throw { code: 'not_granted', message: `Recurso indisponível: ${name}` };
     },
   };

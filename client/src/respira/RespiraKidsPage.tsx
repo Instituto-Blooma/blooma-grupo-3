@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useConvex, useQuery } from 'convex/react';
+import { useAuthActions } from '@convex-dev/auth/react';
 import { api } from '../../../convex/_generated/api';
 import { createRespiraRuntime } from './cloud';
 import { MARKUP, startRespira } from './legacy/respira-app.js';
@@ -22,14 +23,24 @@ export function RespiraKidsPage() {
   const convex = useConvex();
   const me = useQuery(api.respira.me);
   const hostRef = useRef<HTMLDivElement>(null);
+  const { signOut } = useAuthActions();
+  const signOutRef = useRef(signOut);
+  signOutRef.current = signOut;
 
   const meId = me?.id;
   const meAdmin = me?.admin;
+  const meRole = me?.role;
   const meName = me?.name ?? null;
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || !meId || meAdmin === undefined) return;
+    if (!host || !meId || meAdmin === undefined || !meRole) return;
+
+    // Cada tipo de conta abre na sua área (as famílias, no app das famílias).
+    if (!location.hash) {
+      if (meRole === 'medico') history.replaceState(null, '', '#medico');
+      if (meRole === 'hospital') history.replaceState(null, '', '#hospital');
+    }
 
     const style = document.createElement('style');
     style.dataset.respira = '';
@@ -42,7 +53,11 @@ export function RespiraKidsPage() {
     document.head.appendChild(fonts);
 
     const previousTitle = document.title;
-    window.claude = createRespiraRuntime(convex, { id: meId, admin: meAdmin, name: meName });
+    window.claude = createRespiraRuntime(
+      convex,
+      { id: meId, admin: meAdmin, role: meRole, name: meName },
+      { signOut: () => signOutRef.current() }
+    );
     host.innerHTML = MARKUP;
     const stop = startRespira();
 
@@ -54,7 +69,7 @@ export function RespiraKidsPage() {
       fonts.remove();
       document.title = previousTitle;
     };
-  }, [convex, meId, meAdmin, meName]);
+  }, [convex, meId, meAdmin, meRole, meName]);
 
   if (me === undefined) {
     return <div className="p-8 text-center text-muted-foreground">Carregando RespiraKids…</div>;

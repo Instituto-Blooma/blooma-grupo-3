@@ -80,7 +80,8 @@ const IC = {
 const icon = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n] || ""}"/></svg>`;
 
 /* ========== estado local (este aparelho) ========== */
-const LS_KEY = "respirakids:v1";
+/* Um estado por conta: várias contas podem usar o mesmo aparelho sem ver os dados umas das outras. */
+const LS_KEY = "respirakids:v1:" + ((window.claude && window.claude.uid) || "anon");
 const DEF = { consent: null, profile: null, kids: [], activeKid: null, records: [], events: [], questions: [], expert: {}, pending: null, chat: [], settings: { demo: true }, cloudHash: {}, cloudAudio: {}, cloudFamHash: null, retornos: {} };
 const KID_COLORS = ["#5C9E9C", "#C98B5A", "#7A6FB0", "#4F8FC0", "#B5657A", "#6E9A4E"];
 const MAX_KIDS = 12, MAX_BACK_DAYS = 90;
@@ -103,7 +104,7 @@ function log(type, detail) { S.events.push({ t: Date.now(), type, detail: detail
 /* áudios ficam no IndexedDB do aparelho */
 const IDB = {
   db: null,
-  open() { if (this.db) return Promise.resolve(this.db); return new Promise((res, rej) => { const r = indexedDB.open("respirakids", 1); r.onupgradeneeded = () => r.result.createObjectStore("audio"); r.onsuccess = () => { this.db = r.result; res(r.result); }; r.onerror = () => rej(r.error); }); },
+  open() { if (this.db) return Promise.resolve(this.db); return new Promise((res, rej) => { const r = indexedDB.open("respirakids:" + ((window.claude && window.claude.uid) || "anon"), 1); r.onupgradeneeded = () => r.result.createObjectStore("audio"); r.onsuccess = () => { this.db = r.result; res(r.result); }; r.onerror = () => rej(r.error); }); },
   async put(k, v) { try { const db = await this.open(); await new Promise((res, rej) => { const tx = db.transaction("audio", "readwrite"); tx.objectStore("audio").put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); return true; } catch (e) { return false; } },
   async get(k) { try { const db = await this.open(); return await new Promise((res, rej) => { const q = db.transaction("audio").objectStore("audio").get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); } catch (e) { return null; } },
   async del(k) { try { const db = await this.open(); db.transaction("audio", "readwrite").objectStore("audio").delete(k); } catch (e) { } },
@@ -619,9 +620,10 @@ async function initCloud() {
   if (!(window.claude && typeof window.claude.use === "function")) { CLOUD.tried = true; setSync("indisponivel"); if (CUR === "medico") render(); return; }
   const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
   CLOUD.db = db; CLOUD.user = user; CLOUD.tried = true;
-  if (db && user) { try { CLOUD.uid = await user.id(); CLOUD.admin = await user.canEdit(); } catch (e) { } }
+  if (db && user) { try { CLOUD.uid = await user.id(); CLOUD.admin = await user.canEdit(); CLOUD.isAdmin = user.isAdmin ? await user.isAdmin() : CLOUD.admin; CLOUD.role = user.role ? await user.role() : "familia"; } catch (e) { } }
   if (!CLOUD.db || !CLOUD.uid) { setSync("indisponivel"); render(); return; }
   CLOUD.ready = true; setSync("ok");
+  initContas();
   if (cloudOn()) { await hydrate(); pushAll(); subRetornos(); }
   render();
 }
@@ -695,6 +697,7 @@ function vTermos() {
   return `${old ? `<div class="notice info">${icon("info")}<div><b>Atualizamos o termo (versão ${APP_VERSION}).</b> Agora uma conta pode acompanhar várias crianças e adicionar registros de dias anteriores. Leia e confirme de novo.</div></div>` : ""}
   <h1>Antes de começar</h1>
   <p class="muted">Leia com calma. Para usar o RespiraKids, você precisa concordar com este termo.</p>
+  <div class="notice info">${icon("cross")}<div>É médico(a), hospital ou clínica? <a href="#conta"><b>Crie sua conta profissional</b></a> em vez de aceitar o termo das famílias.</div></div>
   <div class="consent-box" tabindex="0">
     <h3>O que o RespiraKids faz</h3>
     <p>É um assistente de orientação e triagem para a respiração de crianças. Ele ajuda você a observar, registrar e decidir os próximos passos. <b>Ele não faz diagnóstico e não substitui a consulta com o pediatra.</b> Em emergência, ligue 192.</p>
@@ -1252,11 +1255,15 @@ function vMais() {
     <button class="btn ghost block" data-go="enviar">${icon("send", "sm")} Enviar relatório ao médico</button>
     <button class="btn ghost block" data-go="sintomas">${icon("heart", "sm")} Guia de sintomas</button>
   </div>
-  <h2>Área profissional</h2>
-  <p class="small muted">Telas para a equipe técnica e para pediatras e hospitais. Nesta versão de demonstração o acesso é livre; na versão com servidor, exige login profissional (com CRM) e perfis de acesso.</p>
+  <h2>Médicos</h2>
   <div class="card stack">
-    <a class="btn ghost block" href="#medico">${icon("cross", "sm")} Abrir o app clínico (análise médica)</a>
-    <p class="small muted" style="margin:0">É um app separado, com link próprio (o endereço termina em #medico), que lê o mesmo banco de dados.</p>
+    <button class="btn ghost block" data-go="medicos">${icon("cross", "sm")} Meus médicos${ctPendentes() ? ` <span class="demo">${ctPendentes()} novo${ctPendentes() > 1 ? "s" : ""}</span>` : ""}</button>
+    <p class="small muted" style="margin:0">Vincule o pediatra da criança: ele acompanha o histórico, ouve as gravações e manda orientações que aparecem aqui no app.</p>
+  </div>
+  <h2>Conta</h2>
+  <div class="card stack">
+    <button class="btn ghost block" data-go="conta">${icon("user", "sm")} Minha conta (família, médico ou hospital)</button>
+    ${CLOUD.admin ? `<a class="btn ghost block" href="#medico">${icon("cross", "sm")} Abrir o app clínico (análise médica)</a>` : ""}
     <button class="btn ghost block" data-go="equipe">${icon("db", "sm")} Monitoramento de dados (equipe técnica)</button>
   </div>
   <h2>Privacidade</h2>
@@ -1381,15 +1388,15 @@ function render() {
   if (__stopped || !document.getElementById("app")) return;
   let v = (location.hash || "#inicio").slice(1);
   if (v === "clinico") v = "medico";
-  if (v !== "medico" && (!S.consent || S.consent.version !== APP_VERSION)) v = "termos";
+  if (!["medico", "hospital", "conta"].includes(v) && (!S.consent || S.consent.version !== APP_VERSION)) v = "termos";
   if (!VIEWS[v]) v = "inicio";
   if (v === "gravar" && !F) newFlow();
   if (CUR === "gravar" && v !== "gravar") closeMic();
   const changed = CUR !== v; CUR = v;
   document.body.classList.toggle("wide", v === "equipe");
-  document.body.classList.toggle("medico", v === "medico");
+  document.body.classList.toggle("medico", v === "medico" || v === "hospital");
   document.title = v === "medico" ? "RespiraKids Clínico" : "RespiraKids";
-  document.body.classList.toggle("no-tabs", v === "termos" || v === "gravar");
+  document.body.classList.toggle("no-tabs", v === "termos" || v === "gravar" || (v === "conta" && (CLOUD.role || "familia") !== "familia"));
   const tab = TAB_OF[v] || v;
   $("#tabbar").innerHTML = TABS.map(([id, ic, l]) => `<a href="#${id}" ${tab === id ? 'aria-current="page"' : ""}>${icon(ic)}<span>${l}</span></a>`).join("");
   const chip = $("#childChip"); if (S.profile && v !== "termos") { chip.hidden = false; chip.innerHTML = `<span class="kdot" style="background:${S.profile.color || "var(--teal)"}"></span>${esc(S.profile.nome)}, ${ageLabel(S.profile.age)} ${S.kids.length > 1 ? "▾" : "+"}`; chip.setAttribute("aria-label", `Criança: ${S.profile.nome}. Toque para trocar ou adicionar criança`); } else chip.hidden = true;
@@ -1424,20 +1431,21 @@ const agoTxt = t => { const m = Math.round((Date.now() - t) / 6e4); return m < 6
 const symTxt = r => [...(r.red || []), ...(r.sym || [])].map(k => SYM_ALL[k] ? SYM_ALL[k].t.toLowerCase() : k).join(", ");
 
 function medShell(inner) {
-  const tabs = [["fila", "Fila de avaliação"], ["criancas", "Crianças"], ["validacao", "Validação"]];
+  const novos = ctPendentes();
+  const tabs = [["fila", "Fila de avaliação"], ["criancas", "Crianças"], ...(CLOUD.role === "medico" ? [["vinculos", `Meus pacientes${novos ? ` (${novos} novo${novos > 1 ? "s" : ""})` : ""}`]] : []), ["validacao", "Validação"]];
   return `<header class="medhead"><img src="${LOGO}" alt=""><div><b class="brand">RespiraKids Clínico</b><br><span class="small muted">Análise médica · versão ${APP_VERSION}</span></div>
-    ${CLOUD.ready ? `<span class="small muted" style="margin-left:auto;text-align:right"><span data-uid="${CLOUD.uid}">Profissional</span><br><a href="#inicio" class="small">App das famílias</a></span>` : ""}</header>
+    ${CLOUD.ready ? `<span class="small muted" style="margin-left:auto;text-align:right"><span data-uid="${CLOUD.uid}">Profissional</span><br><a href="#conta" class="small">Minha conta</a> · <a href="#inicio" class="small">App das famílias</a></span>` : ""}</header>
     ${CLOUD.ready && CLOUD.admin ? `<nav class="medtabs" aria-label="Seções do app clínico">${tabs.map(([k, l]) => `<button class="chip" data-act="medTab" data-k="${k}" aria-pressed="${MED.tab === k}">${l}</button>`).join("")}</nav>` : ""}
     ${inner}`;
 }
 function vMedico() {
   if (!CLOUD.tried) return medShell(`<div class="card" style="text-align:center"><div class="spinner"></div><p>Conectando ao banco de dados…</p></div>`);
   if (!CLOUD.ready) return medShell(`<div class="card"><h2>Banco de dados indisponível</h2><p>O app clínico lê os registros direto do banco de dados do RespiraKids. Abra este link pelo Claude, conectado à conta que recebeu acesso de profissional.</p></div>`);
-  if (!CLOUD.admin) return medShell(`<div class="card"><h2>Acesso restrito a profissionais</h2><p>Esta área é para pediatras, pneumologistas e hospitais do projeto. Peça ao responsável pelo RespiraKids o acesso de <b>Editor</b> no compartilhamento.</p><p class="small muted">As famílias usam o app principal e cada uma só vê os próprios registros.</p><a class="btn ghost" href="#inicio">Ir para o app das famílias</a></div>`);
+  if (!CLOUD.admin) return medShell(`<div class="card"><h2>Acesso restrito a médicos</h2><p>Esta área é para médicos. Se você é médico(a), mude o tipo da sua conta para <b>Médico(a)</b> (com CRM) em Minha conta. Depois, vincule-se às famílias por código ou convite.</p><p class="small muted">As famílias usam o app principal e cada uma só vê os próprios registros. Cada médico vê só as famílias vinculadas a ele.</p><div class="row wrap"><a class="btn" href="#conta">Minha conta</a><a class="btn ghost" href="#inicio">Ir para o app das famílias</a></div></div>`);
   subMed();
   if (!MD.fams) return medShell(`<div class="card" style="text-align:center"><div class="spinner"></div><p>Carregando registros das famílias…</p></div>`);
   const note = MD.timeout ? `<div class="notice y">${icon("alert")}<div>O banco está demorando para responder. Os dados podem estar desatualizados.</div></div>` : "";
-  const body = MED.tab === "criancas" ? medCriancas() : MED.tab === "validacao" ? medValidacao() : medFila();
+  const body = MED.tab === "criancas" ? medCriancas() : MED.tab === "validacao" ? medValidacao() : MED.tab === "vinculos" ? medVinculos() : medFila();
   return medShell(note + body);
 }
 function demoToggle() { return `<label class="check"><input type="checkbox" data-act="medDemo" ${MED.demo ? "checked" : ""}> <span>Incluir crianças de exemplo <span class="demo">fictícias</span></span></label>`; }
@@ -1758,6 +1766,171 @@ const ACT = {
 
 Object.assign(ACT, MED_ACT);
 
+/* ========== contas: família, médico e hospital; vínculos família ↔ médico ========== */
+/* Dados e regras ficam no servidor (convex/respiraContas.ts); aqui só as telas. */
+const CT = { api: null, p: null, unsub: null, err: null, pend: false, form: {}, code: "", email: "" };
+const ROLE_TXT = { familia: "Família", medico: "Médico(a)", hospital: "Hospital ou clínica" };
+ROOTS.ct = () => CT;
+const fmtCode = c => c ? c.slice(0, 3) + "-" + c.slice(3) : "";
+function ctPendentes() { const p = CT.p; return p ? p.meusCodigos.filter(c => c.status === "pedido" && c.expiresAt > Date.now()).length + p.convitesRecebidos.length : 0; }
+async function initContas() {
+  if (CT.unsub || !window.claude) return;
+  try { CT.api = await window.claude.use("contas"); } catch (e) { CT.err = (e && e.code) || "erro"; return; }
+  if (__stopped) return;
+  CT.unsub = CT.api.painel(p => { CT.p = p; CT.err = null; contasRefresh(); }, e => { CT.err = e.code; contasRefresh(); });
+}
+function contasRefresh() {
+  if (!["conta", "medicos", "hospital", "medico", "mais"].includes(CUR)) return;
+  const ae = document.activeElement;
+  if (ae && (ae.tagName === "TEXTAREA" || (ae.tagName === "INPUT" && ae.type !== "checkbox"))) { CT.pend = true; return; }
+  render();
+}
+__on(document, "focusout", () => { if (CT.pend) { CT.pend = false; setTimeout(contasRefresh, 50); } });
+function contasWait(shell) {
+  const wrap = h => shell ? shell(h) : h;
+  if (!CLOUD.tried || (CLOUD.ready && !CT.p && !CT.err)) return wrap(`<div class="card" style="text-align:center"><div class="spinner"></div><p>Carregando sua conta…</p></div>`);
+  if (!CLOUD.ready || !CT.p) return wrap(`<div class="card"><h2>Conta indisponível</h2><p>Não foi possível conectar ao banco de dados agora. Tente de novo em instantes.</p></div>`);
+  return "";
+}
+function personLine(p) {
+  return `<b>${esc(p.nome)}</b>${p.role === "medico" ? ` <span class="small muted">· CRM ${esc(p.crm || "–")}${p.especialidade ? " · " + esc(p.especialidade) : ""}</span>` : p.email ? ` <span class="small muted">· ${esc(p.email)}</span>` : ""}`;
+}
+function convitesCard() {
+  const r = CT.p.convitesRecebidos; if (!r.length) return "";
+  return `<div class="card" style="border:2px solid var(--teal-d)"><h3>${icon("send", "sm")} Convites para você</h3>${r.map(i => `<div style="margin:10px 0"><p style="margin:0">${personLine(i.de)} ${i.kind === "hospital" ? "convidou você para a equipe médica." : "quer acompanhar as crianças da sua família."}</p>
+    <div class="row wrap" style="margin-top:8px"><button class="btn" data-act="ctAceitar" data-id="${i.id}">Aceitar</button><button class="btn ghost" data-act="ctRecusarConvite" data-id="${i.id}">Recusar</button></div></div>`).join("")}</div>`;
+}
+function codigoCard(outro) {
+  const p = CT.p, now = Date.now(), meus = p.meusCodigos.filter(c => c.expiresAt > now);
+  const pedidos = meus.filter(c => c.status === "pedido" && c.pedido), aberto = meus.find(c => c.status === "aberto");
+  const wa = aberto ? `https://wa.me/?text=${encodeURIComponent(`Meu código do RespiraKids para nos vincularmos: ${fmtCode(aberto.code)}`)}` : "";
+  return `<div class="card"><h3>${icon("shield", "sm")} Vincular por código</h3>
+    <p class="small muted">Um lado gera o código e manda para o outro. Quem recebe digita aqui embaixo. Depois, quem gerou o código aprova, e só então o vínculo é feito.</p>
+    ${pedidos.map(c => `<div class="notice y">${icon("user")}<div>${personLine(c.pedido)} usou o seu código <b>${fmtCode(c.code)}</b> e quer se vincular a você.
+      <div class="row wrap" style="margin-top:8px"><button class="btn" data-act="ctAprovar" data-id="${c.id}">Aprovar</button><button class="btn ghost" data-act="ctRecusar" data-id="${c.id}">Recusar</button></div></div></div>`).join("")}
+    ${aberto ? `<div style="text-align:center;margin:12px 0"><div class="small muted">Seu código</div><div class="bigtime" style="letter-spacing:.14em">${fmtCode(aberto.code)}</div>
+      <div class="small muted">Mande para ${outro}. Vale até ${fmtDate(aberto.expiresAt)}, ${fmtTime(aberto.expiresAt)}.</div>
+      <div class="row wrap" style="justify-content:center;margin-top:10px"><a class="btn wa" href="${wa}" target="_blank" rel="noopener">${icon("send", "sm")} Mandar pelo WhatsApp</a><button class="btn ghost" data-act="ctCancelar" data-id="${aberto.id}">Cancelar código</button></div></div>`
+      : `<button class="btn block" data-act="ctGerar">${icon("plus", "sm")} Gerar um código</button>`}
+    <div class="hr"></div>
+    <label class="f" for="ctCode">Recebeu um código? Digite aqui</label>
+    <div class="row"><input class="f" id="ctCode" data-in="ct.code" value="${esc(CT.code)}" placeholder="Ex.: K7P-3QX" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-act="ctUsar">Enviar</button></div>
+    ${p.meusPedidos.map(r => `<p class="small" style="margin:10px 0 0">${icon("timer", "sm")} Esperando <b>${esc(r.de.nome)}</b> aprovar o código ${fmtCode(r.code)}. <button class="link" data-act="ctCancelar" data-id="${r.id}">Desistir</button></p>`).join("")}
+  </div>`;
+}
+function convidarCard(titulo, ajuda) {
+  const s = CT.p.convitesEnviados;
+  return `<div class="card"><h3>${icon("send", "sm")} ${titulo}</h3><p class="small muted">${ajuda}</p>
+    <div class="row"><input class="f" type="email" id="ctEmail" data-in="ct.email" value="${esc(CT.email)}" placeholder="email@exemplo.com" autocomplete="off"><button class="btn" data-act="ctConvidar">Convidar</button></div>
+    ${s.length ? `<p class="small muted" style="margin:12px 0 4px">Esperando resposta:</p>${s.map(i => `<p class="small" style="margin:4px 0">${esc(i.email)} · enviado ${agoTxt(i.criadoEm)} <button class="link" data-act="ctCancelarConvite" data-id="${i.id}">Cancelar</button></p>`).join("")}` : ""}</div>`;
+}
+
+/* Minha conta: tipo de conta e dados */
+function vConta() {
+  const w = contasWait(); if (w) return w;
+  const p = CT.p;
+  if (CT.form._for !== p.me.id) CT.form = { _for: p.me.id, role: p.me.role, nome: p.me.nome, crm: p.me.crm, especialidade: p.me.especialidade, cidade: p.me.cidade };
+  const f = CT.form, back = p.me.role === "medico" ? "medico" : p.me.role === "hospital" ? "hospital" : S.consent ? "mais" : "termos";
+  const help = { familia: "Para pais, mães e responsáveis: gravar, registrar e acompanhar a respiração das crianças.", medico: "Para médicos: ver o histórico dos pacientes vinculados, ouvir as gravações, validar e mandar orientações.", hospital: "Para hospitais e clínicas: montar a equipe de médicos. Cada médico aceita o convite para entrar." };
+  return `<button class="link" data-go="${back}">${icon("back", "sm")} Voltar</button>
+  <h1>Minha conta</h1>
+  <p class="muted">Você entrou como ${esc(p.me.email || "")}. Tipo de conta: <b>${ROLE_TXT[p.me.role]}</b>${p.me.temPerfil ? "" : " (padrão)"}.</p>
+  ${convitesCard()}
+  <div class="card"><h3>Tipo de conta</h3>
+    <div class="chips">${["familia", "medico", "hospital"].map(r => `<button class="chip" data-set="ct.form.role" data-val="${r}" data-rerender aria-pressed="${f.role === r}">${ROLE_TXT[r]}</button>`).join("")}</div>
+    <p class="small muted" style="margin:10px 0 0">${help[f.role]}</p>
+    <label class="f" for="ctNome">${f.role === "hospital" ? "Nome do hospital ou clínica" : f.role === "medico" ? "Seu nome, como as famílias vão ver (ex.: Dra. Ana Souza)" : "Seu nome"}</label>
+    <input class="f" id="ctNome" data-in="ct.form.nome" value="${esc(f.nome || "")}">
+    ${f.role === "medico" ? `<label class="f" for="ctCrm">CRM com estado</label><input class="f" id="ctCrm" data-in="ct.form.crm" value="${esc(f.crm || "")}" placeholder="Ex.: 12345-DF">
+      <label class="f" for="ctEsp">Especialidade</label><input class="f" id="ctEsp" data-in="ct.form.especialidade" value="${esc(f.especialidade || "")}" placeholder="Ex.: Pediatria">` : ""}
+    ${f.role !== "familia" ? `<label class="f" for="ctCid">Cidade</label><input class="f" id="ctCid" data-in="ct.form.cidade" value="${esc(f.cidade || "")}" placeholder="Ex.: Brasília">` : ""}
+    <button class="btn block" style="margin-top:16px" data-act="ctSalvarPerfil">Salvar</button>
+  </div>
+  <div class="card"><button class="btn ghost block" data-act="ctSair">Sair da conta</button>
+    <p class="small muted" style="margin:8px 0 0">Os registros guardados neste aparelho continuam aqui. Para apagar, use Mais → Apagar tudo.</p></div>`;
+}
+
+/* Família: meus médicos */
+function vMedicos() {
+  const w = contasWait(); if (w) return w;
+  const p = CT.p;
+  if (p.me.role !== "familia") return `<h1>Meus médicos</h1><div class="card"><p>Esta tela é das famílias. Sua conta é de ${ROLE_TXT[p.me.role]}.</p><a class="btn" href="#conta">Minha conta</a></div>`;
+  const shared = S.consent && S.consent.cloud;
+  return `<button class="link" data-go="mais">${icon("back", "sm")} Voltar</button>
+  <h1>Meus médicos</h1>
+  <p class="muted">Os médicos vinculados veem o histórico de todas as crianças da sua conta, ouvem as gravações e podem mandar orientações, que aparecem no Histórico. Você pode remover um médico quando quiser.</p>
+  ${!shared ? `<div class="notice y">${icon("alert")}<div>Seus registros ainda estão só neste aparelho. Para o médico ver, toque em <b>Guardar no banco e compartilhar com profissionais</b> em Mais → Privacidade.</div></div>` : ""}
+  ${convitesCard()}
+  <div class="card"><h3>Médicos vinculados</h3>${p.medicos.length ? p.medicos.map(m => `<div class="row between" style="margin:12px 0;align-items:flex-start"><div>${personLine(m)}<br><span class="small muted">${m.hospitais.length ? esc(m.hospitais.join(", ")) + " · " : ""}vinculado em ${fmtDate(m.desde)}</span></div>
+    <button class="link" style="color:var(--r)" data-act="ctDesvincular" data-id="${m.id}" data-nome="${esc(m.nome)}">Remover</button></div>`).join("") : `<p class="small muted" style="margin:0">Nenhum médico vinculado ainda.</p>`}</div>
+  ${codigoCard("o seu médico")}`;
+}
+
+/* Médico: aba "Meus pacientes" do app clínico */
+function medVinculos() {
+  const w = contasWait(); if (w) return w;
+  const p = CT.p;
+  if (p.me.role !== "medico") return `<div class="card"><p>Os vínculos com pacientes são para contas de médico. <a href="#conta">Minha conta</a></p></div>`;
+  const kidsTxt = f => f.criancas.length ? f.criancas.map(k => esc(k.nome) + (k.age !== null && k.age !== "" ? ", " + ageLabel(k.age) : "")).join(" · ") : `<span class="muted">${f.compartilhando ? "Ainda sem crianças cadastradas" : "A família ainda não ativou o compartilhamento dos dados"}</span>`;
+  return `${convitesCard()}
+  <div class="card"><h3>Meus pacientes (${p.pacientes.length} família${p.pacientes.length === 1 ? "" : "s"})</h3>
+    ${p.pacientes.length ? p.pacientes.map(f => `<div class="row between" style="margin:12px 0;align-items:flex-start"><div><b>${esc(f.nome)}</b> <span class="small muted">${esc(f.email || "")}</span><br><span class="small">${kidsTxt(f)}</span><br><span class="small muted">${f.registros} registro${f.registros === 1 ? "" : "s"} · vinculado em ${fmtDate(f.desde)} por ${f.via === "codigo" ? "código" : "convite"}</span></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">${f.criancas.length ? `<button class="link" data-act="ctVerFamilia" data-id="${f.id}">Ver histórico</button>` : ""}<button class="link" style="color:var(--r)" data-act="ctDesvincular" data-id="${f.id}" data-nome="${esc(f.nome)}">Remover</button></div></div>`).join("") : `<p class="small muted" style="margin:0">Nenhum paciente ainda. Gere um código e mande para a família, ou convide pelo e-mail.</p>`}</div>
+  ${codigoCard("a família")}
+  ${convidarCard("Convidar família por e-mail", "Digite o e-mail que a família usa para entrar no RespiraKids. Ela vê o convite em Mais → Meus médicos e aceita.")}
+  <div class="card"><h3>Meus hospitais</h3>${p.hospitais.length ? p.hospitais.map(h => `<div class="row between" style="margin:8px 0"><span><b>${esc(h.nome)}</b> <span class="small muted">desde ${fmtDate(h.desde)}</span></span><button class="link" style="color:var(--r)" data-act="ctSairEquipe" data-id="${h.id}" data-nome="${esc(h.nome)}">Sair</button></div>`).join("") : `<p class="small muted" style="margin:0">Você não faz parte de nenhum hospital. Quando um hospital convidar o seu e-mail, o convite aparece aqui.</p>`}</div>`;
+}
+
+/* Hospital: equipe médica */
+function vHospital() {
+  const shell = h => `<header class="medhead"><img src="${LOGO}" alt=""><div><b class="brand">RespiraKids Hospital</b><br><span class="small muted">${CT.p ? esc(CT.p.me.nome) : "Equipe médica"}</span></div><span class="small muted" style="margin-left:auto;text-align:right"><a href="#conta" class="small">Minha conta</a></span></header>${h}`;
+  const w = contasWait(shell); if (w) return w;
+  const p = CT.p;
+  if (p.me.role !== "hospital") return shell(`<div class="card"><h2>Área de hospitais</h2><p>Para montar uma equipe médica, mude o tipo da sua conta para <b>Hospital ou clínica</b>.</p><a class="btn" href="#conta">Minha conta</a></div>`);
+  const fam = p.equipe.reduce((a, d) => a + d.pacientes, 0);
+  return shell(`<div class="kpis"><div class="kpi"><b>${p.equipe.length}</b><span>médicos na equipe</span></div><div class="kpi"><b>${fam}</b><span>famílias acompanhadas pela equipe</span></div><div class="kpi"><b>${p.convitesEnviados.length}</b><span>convites esperando resposta</span></div></div>
+    <div class="card"><h3>Equipe médica</h3>${p.equipe.length ? `<div class="tablewrap"><table><thead><tr><th>Médico(a)</th><th>CRM</th><th>Especialidade</th><th>Famílias</th><th>Desde</th><th></th></tr></thead><tbody>${p.equipe.map(d => `<tr><td>${esc(d.nome)}<br><span class="small muted">${esc(d.email || "")}</span></td><td>${esc(d.crm || "–")}</td><td>${esc(d.especialidade || "–")}</td><td>${d.pacientes}</td><td>${fmtDate(d.desde)}</td><td><button class="link" style="color:var(--r)" data-act="ctSairEquipe" data-id="${d.id}" data-nome="${esc(d.nome)}">Remover</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="small muted" style="margin:0">Nenhum médico na equipe ainda. Convide pelo e-mail abaixo.</p>`}</div>
+    ${convidarCard("Convidar médico(a) para a equipe", "Digite o e-mail que o médico usa no RespiraKids. Ele precisa ter uma conta de médico e aceitar o convite.")}
+    <p class="small muted">Por privacidade, o hospital vê a equipe e quantas famílias cada médico acompanha, mas não os dados de saúde das crianças. Só o médico vinculado a cada família vê esses dados.</p>`);
+}
+
+async function ctRun(name, args, okMsg) {
+  if (!CT.api) { toast("Sua conta ainda está carregando. Tente de novo."); return null; }
+  try { const r = await CT.api.call(name, args); if (okMsg) toast(okMsg); return r === null || r === undefined ? true : r; }
+  catch (e) { toast((e && e.message) || "Não foi possível agora. Tente de novo."); return null; }
+}
+const CT_ACT = {
+  async ctSalvarPerfil(el) {
+    const f = CT.form; el.disabled = true;
+    const ok = await ctRun("salvarPerfil", { role: f.role, nome: f.nome || "", crm: f.crm || undefined, especialidade: f.especialidade || undefined, cidade: f.cidade || undefined }, "Conta salva.");
+    el.disabled = false;
+    if (ok) { log("conta_tipo", f.role); go(f.role === "medico" ? "medico" : f.role === "hospital" ? "hospital" : S.consent ? "medicos" : "termos"); }
+  },
+  async ctGerar(el) { el.disabled = true; const code = await ctRun("gerarCodigo", {}); el.disabled = false; if (code) log("codigo_gerado", ""); },
+  async ctUsar() {
+    const c = (CT.code || "").trim(); if (!c) { toast("Digite o código."); return; }
+    const r = await ctRun("usarCodigo", { code: c });
+    if (r) { CT.code = ""; toast(`Pronto! Agora ${r.aguardando} precisa aprovar.`, 4500); log("codigo_usado", ""); render(); }
+  },
+  async ctAprovar(el) { el.disabled = true; if (await ctRun("responderPedido", { codeId: el.dataset.id, aprovar: true }, "Vínculo feito.")) log("vinculo_aprovado", ""); },
+  async ctRecusar(el) { el.disabled = true; await ctRun("responderPedido", { codeId: el.dataset.id, aprovar: false }, "Pedido recusado."); },
+  async ctCancelar(el) { await ctRun("cancelarCodigo", { codeId: el.dataset.id }); },
+  async ctConvidar() {
+    const e = (CT.email || "").trim(); if (!e) { toast("Digite o e-mail."); return; }
+    if (await ctRun("convidar", { email: e }, "Convite enviado. A pessoa vê o convite quando entrar no RespiraKids com esse e-mail.")) { CT.email = ""; render(); }
+  },
+  async ctCancelarConvite(el) { await ctRun("cancelarConvite", { inviteId: el.dataset.id }, "Convite cancelado."); },
+  async ctAceitar(el) { el.disabled = true; if (await ctRun("responderConvite", { inviteId: el.dataset.id, aceitar: true }, "Convite aceito.")) log("convite_aceito", ""); },
+  async ctRecusarConvite(el) { el.disabled = true; await ctRun("responderConvite", { inviteId: el.dataset.id, aceitar: false }, "Convite recusado."); },
+  ctDesvincular(el) { if (!armed(el, "Toque de novo para remover")) return; ctRun("desvincular", { outroId: el.dataset.id }, `${el.dataset.nome} foi removido(a).`); },
+  ctSairEquipe(el) { if (!armed(el, "Toque de novo para confirmar")) return; ctRun("sairDaEquipe", { outroId: el.dataset.id }, "Pronto."); },
+  async ctSair(el) { el.disabled = true; try { await CT.api.sair(); } catch (e) { el.disabled = false; toast("Não foi possível sair agora."); } },
+  ctVerFamilia(el) { const k = medData().kids.find(x => x.fam === el.dataset.id); MED.tab = "criancas"; MED.fam = k ? k.id : null; MED.rec = null; render(); window.scrollTo(0, 0); }
+};
+Object.assign(ACT, CT_ACT);
+Object.assign(VIEWS, { conta: vConta, medicos: vMedicos, hospital: vHospital });
+Object.assign(TAB_OF, { conta: "mais", medicos: "mais" });
+
 /* ========== eventos ========== */
 function doSet(el) {
   const path = el.dataset.set, val = el.dataset.val, multi = el.hasAttribute("data-multi");
@@ -1811,8 +1984,8 @@ return function stopRespira() {
   clearTimeout(pushT);
   try { closeMic(); } catch (e) { }
   try { clearInterval(R.iv); clearInterval(ACT._civ); } catch (e) { }
-  for (const u of [CLOUD.retUnsub, MD.unsubF, MD.unsubV]) { try { if (u) u(); } catch (e) { } }
-  CLOUD.retUnsub = MD.unsubF = MD.unsubV = null;
+  for (const get of [() => CLOUD.retUnsub, () => MD.unsubF, () => MD.unsubV, () => CT.unsub]) { try { const u = get(); if (u) u(); } catch (e) { } }
+  try { CLOUD.retUnsub = MD.unsubF = MD.unsubV = null; CT.unsub = null; } catch (e) { }
   document.body.classList.remove("wide", "medico", "no-tabs");
 };
 }
