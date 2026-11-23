@@ -735,7 +735,7 @@ function vInicio() {
     <div class="micwrap">${micBars("breathe")}
       <button class="micbtn" data-act="startFlow" aria-label="Gravar respiração. Abre a preparação, a gravação ainda não começa."><img src="${LOGO}" alt=""><span class="lbl">${icon("mic", "sm")} Gravar respiração</span></button>
     </div>
-    <p class="small muted" style="margin-top:44px">20 segundos. Você recebe uma orientação na hora.</p>
+    <p class="small muted" style="margin-top:6px">20 segundos. Você recebe uma orientação na hora.</p>
   </section>
   ${emergencyNote()}
   ${S.kids.length > 1 ? `<div class="chips" style="margin-bottom:14px">${S.kids.map(k => `<button class="chip" data-act="pickKid" data-id="${k.id}" aria-pressed="${k.id === S.activeKid}"><span class="kdot" style="background:${k.color || "var(--teal)"}"></span>${esc(k.nome)}</button>`).join("")}</div>` : ""}

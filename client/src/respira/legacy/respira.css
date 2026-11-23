@@ -37,7 +37,14 @@ p{margin:0 0 .8em}
 a{color:var(--teal-d)}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--teal);outline-offset:2px;border-radius:10px}
-.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block;vertical-align:-.3em}
+/* O template (Tailwind) zera alguns padrões do navegador que o app original usa: devolve aqui. */
+ol{list-style:decimal}
+ul{list-style:disc}
+ul.plain,ol.acts{padding-left:1.3em}
+a{text-decoration:underline}
+a.btn,.tabbar a,.plist a{text-decoration:none}
+summary{display:list-item}
 .ic.lg{width:34px;height:34px;stroke-width:1.6}
 .ic.sm{width:18px;height:18px}
 
@@ -227,11 +234,17 @@ body.medico main{max-width:1040px;padding-bottom:40px}
 .medtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .retorno{border-left:4px solid var(--teal-d)}
 /* aviso de emergência com botão de ligar */
+.notice>div{flex:1;min-width:0}
+/* celulares estreitos: botões lado a lado cabem em uma linha */
+@media (max-width:420px){.grid2 .btn{padding:12px 8px;font-size:.97rem}.grid2 .btn .ic{display:none}}
 .notice.emerg .btn{display:flex;width:100%;margin-top:10px;min-height:48px;font-size:1rem}
 /* "Saiba mais": detalhes que ficam recolhidos */
 details.more{margin:4px 0 14px}
 details.more>summary{cursor:pointer;font-weight:700;color:var(--teal-d);padding:10px 0;list-style:none}
-details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::-webkit-details-marker,details.srcs>summary::-webkit-details-marker{display:none}
+details.srcs>summary{list-style:none}
+details.srcs>summary::before{content:"+ "}
+details.srcs[open]>summary::before{content:"− "}
 details.more>summary::before{content:"+ "}
 details.more[open]>summary::before{content:"− "}
 
